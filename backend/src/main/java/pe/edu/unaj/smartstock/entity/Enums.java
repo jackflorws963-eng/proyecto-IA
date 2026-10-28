@@ -1,6 +1,5 @@
 package pe.edu.unaj.smartstock.entity;
 
-/** Enumeraciones del dominio. Se guardan como texto (VARCHAR + CHECK en SQL). */
 public final class Enums {
     private Enums() { }
 

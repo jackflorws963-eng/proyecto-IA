@@ -22,7 +22,6 @@ public class Alerta {
     @Column(nullable = false, length = 15)
     private Enums.EstadoAlerta estado = Enums.EstadoAlerta.ABIERTA;
 
-    /** Ej.: "TEMPERATURA:ubicacion:1". Una sola alerta no cerrada por clave. */
     @Column(name = "clave_dedup", nullable = false, length = 100)
     private String claveDedup;
 

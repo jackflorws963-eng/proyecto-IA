@@ -12,7 +12,6 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-/** Dashboard, lecturas, estimaciones, discrepancias, alertas y auditoria. */
 @RestController
 @RequestMapping("/api")
 public class MonitoreoController {
@@ -34,7 +33,6 @@ public class MonitoreoController {
         this.auditoria = auditoria;
     }
 
-    // ---------- Dashboard ----------
     @GetMapping("/dashboard/resumen")
     public ResumenDashboard resumen() { return dashboard.resumen(); }
 
@@ -47,10 +45,9 @@ public class MonitoreoController {
     @GetMapping("/dashboard/alertas")
     public List<AlertaResponse> alertasActivas() { return alertas.activasRecientes(); }
 
-    /** GET /api/lecturas/serie?sensorId=1&horas=6 -> puntos para graficos */
     @GetMapping("/lecturas/serie")
     public List<PuntoSerie> serie(@RequestParam Long sensorId, @RequestParam(defaultValue = "6") int horas) {
-        int h = Math.min(Math.max(horas, 1), 24 * 7);   // el dashboard ofrece hasta 7 dias
+        int h = Math.min(Math.max(horas, 1), 24 * 7);
         OffsetDateTime ahora = OffsetDateTime.now();
         return iot.serie(sensorId, ahora.minusHours(h), ahora.plusMinutes(1));
     }
@@ -60,7 +57,6 @@ public class MonitoreoController {
         return estimacion.ultimasEstimaciones(sensorId);
     }
 
-    // ---------- Discrepancias (revision humana) ----------
     @GetMapping("/discrepancias")
     public List<DiscrepanciaResponse> discrepancias(@RequestParam(defaultValue = "true") boolean soloPendientes) {
         return estimacion.listarDiscrepancias(soloPendientes);
@@ -76,7 +72,6 @@ public class MonitoreoController {
         return estimacion.rechazar(id, auth.getName(), r.comentario().trim());
     }
 
-    // ---------- Alertas ----------
     @GetMapping("/alertas")
     public List<AlertaResponse> listarAlertas(
             @RequestParam(required = false) EstadoAlerta estado,
@@ -90,7 +85,6 @@ public class MonitoreoController {
         return alertas.reconocer(id, auth.getName());
     }
 
-    // ---------- Auditoria ----------
     @GetMapping("/auditoria")
     public List<AuditoriaResponse> auditoria() { return auditoria.ultimos(); }
 }

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
-/** Cantidad estimada a partir del peso, comparada con el stock registrado. */
 @Entity
 @Table(name = "estimacion")
 public class Estimacion {

@@ -18,7 +18,6 @@ public class Sensor {
     @Column(nullable = false, length = 20)
     private Enums.TipoSensor tipo;
 
-    /** Producto pesado por la celda de carga (solo sensores PESO). */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "producto_id")
     private Producto producto;

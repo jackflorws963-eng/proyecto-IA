@@ -23,15 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Ventas. Reglas:
- *  - El precio se toma del producto al momento de vender (IGV incluido); el navegador solo envia cantidades.
- *  - Cada linea descuenta stock con un movimiento SALIDA (MovimientoService): sin stock suficiente no hay venta.
- *  - Toda la venta es una transaccion: numeracion, stock, comprobante y auditoria se aplican juntos o nada.
- *  - Factura: RUC de 11 digitos y razon social. Boleta de S/ 700 o mas: DNI o RUC del cliente (regla SUNAT).
- *  - Pago en efectivo: monto recibido >= total; se calcula el vuelto.
- *  - Anular (solo ADMIN) devuelve el stock con movimientos ENTRADA; la venta queda registrada como ANULADA.
- */
 @Service
 public class VentaService {
 
@@ -68,7 +59,6 @@ public class VentaService {
         Usuario vendedor = usuarios.findByUsername(username)
                 .orElseThrow(() -> NegocioException.noEncontrado("Usuario", username));
 
-        // Un producto repetido en el carrito se vende como una sola linea
         Map<Long, Integer> cantidades = new LinkedHashMap<>();
         r.items().forEach(i -> cantidades.merge(i.productoId(), i.cantidad(), Integer::sum));
 
@@ -111,14 +101,12 @@ public class VentaService {
             v.setVuelto(recibido.subtract(total));
         }
 
-        // Correlativo: la fila de la serie queda bloqueada hasta el fin de la transaccion
         SerieComprobante serie = series.bloquear(r.tipoComprobante())
                 .orElseThrow(() -> NegocioException.noEncontrado("Serie de comprobante", r.tipoComprobante()));
         serie.setUltimo(serie.getUltimo() + 1);
         v.setSerie(serie.getSerie());
         v.setCorrelativo(serie.getUltimo());
 
-        // Salida de stock por cada linea (falla toda la venta si alguna no tiene stock)
         for (VentaDetalle d : v.getDetalles()) {
             d.setMovimiento(movimientos.registrarInterno(new MovimientoRequest(TipoMovimiento.SALIDA,
                     d.getProducto().getId(), ubicacion.getId(), null, d.getCantidad(), "Venta " + v.getNumero()),
@@ -135,7 +123,6 @@ public class VentaService {
         Venta v = buscar(id);
         if (v.getEstado() != EstadoVenta.EMITIDA) throw NegocioException.conflicto("La venta " + v.getNumero() + " ya esta anulada");
         Usuario u = usuarios.findByUsername(username).orElseThrow(() -> NegocioException.noEncontrado("Usuario", username));
-        // Devuelve la mercaderia a la ubicacion de la que salio
         for (VentaDetalle d : v.getDetalles()) {
             movimientos.registrarInterno(new MovimientoRequest(TipoMovimiento.ENTRADA, d.getProducto().getId(), null,
                     v.getUbicacion().getId(), d.getCantidad(), "Anulacion venta " + v.getNumero()), username, true, null);
@@ -180,7 +167,6 @@ public class VentaService {
                 ((Number) mes[0]).longValue(), decimal(mes[1]), top);
     }
 
-    /** Precio con IGV incluido -> [subtotal (base imponible), igv]. Ej.: 118.00 con 18 % -> [100.00, 18.00]. */
     static BigDecimal[] desglosar(BigDecimal total, BigDecimal igvPct) {
         BigDecimal factor = BigDecimal.ONE.add(igvPct.movePointLeft(2));
         BigDecimal subtotal = total.divide(factor, 2, RoundingMode.HALF_UP);
@@ -203,7 +189,6 @@ public class VentaService {
         return ventas.findById(id).orElseThrow(() -> NegocioException.noEncontrado("Venta", id));
     }
 
-    /** SUM y COALESCE pueden llegar como BigDecimal, Long o Integer segun el dialecto. */
     private static BigDecimal decimal(Object n) {
         return n == null ? BigDecimal.ZERO : new BigDecimal(n.toString()).setScale(2, RoundingMode.HALF_UP);
     }

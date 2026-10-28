@@ -28,23 +28,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Recepcion de mediciones del ESP32.
- * Flujo por lectura: sensor existe y activo -> no duplicada (sensor, seq) ->
- * validar rango fisico -> guardar -> evaluar alertas ambientales o estimacion por peso.
- * Una lectura NUNCA genera movimientos de inventario.
- */
 @Service
 public class IotService {
 
     private static final Logger log = LoggerFactory.getLogger(IotService.class);
 
-    /** Rangos fisicos posibles de cada sensor (fuera de esto la lectura es un error del sensor). */
-    static final double TEMP_MIN = -40, TEMP_MAX = 80;      // DHT22
-    static final double HUM_MIN = 0, HUM_MAX = 100;         // DHT22
-    static final double PESO_MIN = -500, PESO_MAX = 100_000; // gramos (celdas hasta ~100 kg)
+    static final double TEMP_MIN = -40, TEMP_MAX = 80;
+    static final double HUM_MIN = 0, HUM_MAX = 100;
+    static final double PESO_MIN = -500, PESO_MAX = 100_000;
 
-    /** Margen para cerrar alertas ambientales (histeresis: evita abrir/cerrar en el limite). */
     static final BigDecimal HISTERESIS = new BigDecimal("0.5");
 
     private final SensorRepository sensores;
@@ -55,7 +47,6 @@ public class IotService {
     private final VentiladorService ventilador;
     private final TransactionTemplate tx;
 
-    // Resultados por lectura (el firmware decide segun estos textos)
     static final String GUARDADA = "GUARDADA";
     static final String DUPLICADA = "DUPLICADA";
     static final String RECHAZADA = "RECHAZADA";
@@ -74,11 +65,6 @@ public class IotService {
         this.tx = tx;
     }
 
-    /**
-     * Cada lectura se guarda en su PROPIA transaccion: si una falla, las demas del lote
-     * quedan guardadas (antes un solo error revertia el lote completo y el ESP32 lo
-     * reenviaba una y otra vez).
-     */
     public LoteLecturasResponse recibir(Long dispositivoId, LoteLecturasRequest lote) {
         OffsetDateTime ahora = OffsetDateTime.now(ZoneOffset.UTC);
         String codigo = tx.execute(s -> {
@@ -111,14 +97,11 @@ public class IotService {
             try {
                 return tx.execute(s -> guardarLectura(dispositivoId, item, ahora));
             } catch (DataIntegrityViolationException | ConcurrencyFailureException ex) {
-                // Otra peticion creo a la vez la misma lectura, alerta o discrepancia (indices unicos).
-                // En el segundo intento ya se encuentra el registro existente.
                 if (intento >= 2) {
                     log.warn("Conflicto al guardar lectura seq={} tipo={}: {}", item.seq(), item.tipo(), ex.getMessage());
                     return new ResultadoItem(item.seq(), item.tipo(), REINTENTAR, "conflicto temporal");
                 }
             } catch (RuntimeException ex) {
-                // Error inesperado: se registra y se rechaza para no bloquear la cola del ESP32.
                 log.error("Error al procesar lectura seq={} tipo={}", item.seq(), item.tipo(), ex);
                 return new ResultadoItem(item.seq(), item.tipo(), RECHAZADA, "error al procesar");
             }
@@ -137,11 +120,8 @@ public class IotService {
         Optional<Lectura> previa = lecturas.findBySensorIdAndSeq(sensor.getId(), item.seq());
         if (previa.isPresent()) {
             if (previa.get().getValor().compareTo(valor) == 0) {
-                // Reintento del ESP32: ya se guardo. Se confirma para que la borre de su buffer.
                 return new ResultadoItem(item.seq(), item.tipo(), DUPLICADA, "ya registrada");
             }
-            // Mismo seq con otro valor: el contador del ESP32 se reinicio (flash borrada, placa nueva).
-            // No es un duplicado: se pide reenviarla con un seq nuevo (ver seqMaximo en la respuesta).
             log.warn("Sensor {} envio seq={} ya usado con otro valor: contador del dispositivo reiniciado",
                     sensor.getId(), item.seq());
             return new ResultadoItem(item.seq(), item.tipo(), SEQ_REUTILIZADA, "seq ya usado con otro valor");
@@ -163,7 +143,6 @@ public class IotService {
         return new ResultadoItem(item.seq(), item.tipo(), GUARDADA, l.getEstado().name());
     }
 
-    /** Estado del ventilador despues de procesar el lote (puede haber cambiado con estas lecturas). */
     private boolean ventiladorEncendido(Long dispositivoId) {
         return dispositivos.findById(dispositivoId).map(Dispositivo::isVentiladorEncendido).orElse(false);
     }
@@ -189,7 +168,6 @@ public class IotService {
         }
     }
 
-    /** Abre alerta fuera de limites; la cierra solo cuando vuelve con margen de histeresis. */
     void evaluarAmbiente(TipoAlerta tipo, Ubicacion u, BigDecimal valor, BigDecimal min, BigDecimal max, String unidad) {
         String clave = AlertaService.clave(tipo, "ubicacion", u.getId());
         if (valor.compareTo(min) < 0 || valor.compareTo(max) > 0) {
@@ -213,10 +191,6 @@ public class IotService {
         };
     }
 
-    /**
-     * Usa la hora del ESP32 (NTP) si es confiable: no futura (> 2 min) ni mas antigua de 7 dias.
-     * Si no, usa la hora del servidor.
-     */
     static OffsetDateTime resolverFecha(Long ts, OffsetDateTime ahora) {
         if (ts == null || ts <= 0) return ahora;
         OffsetDateTime t = OffsetDateTime.ofInstant(Instant.ofEpochSecond(ts), ZoneOffset.UTC);
@@ -224,7 +198,6 @@ public class IotService {
         return t;
     }
 
-    // ---------- Consultas para el dashboard ----------
     @Transactional(readOnly = true)
     public List<UltimaLectura> ultimasLecturas() {
         List<UltimaLectura> r = new ArrayList<>();

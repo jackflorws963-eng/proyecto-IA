@@ -1,19 +1,4 @@
 #!/usr/bin/env python3
-"""
-SmartStock IoT - Simulador del ESP32 (para probar sin hardware).
-
-Envia lecturas de temperatura, humedad y peso a la API con el mismo formato
-y las mismas cabeceras que el firmware real. Solo usa la biblioteca estandar.
-
-Uso:
-  python simulador_esp32.py                         # 5 s entre lecturas, 50 g por unidad, 20 unidades
-  python simulador_esp32.py --unidades 12           # simula que se retiraron productos (genera discrepancia)
-  python simulador_esp32.py --temp 35               # temperatura fuera de rango (genera alerta)
-  python simulador_esp32.py --duplicar              # reenvia cada lote 2 veces (prueba anti-duplicados)
-  python simulador_esp32.py --ciclos 1              # un solo envio
-
-Variables de entorno opcionales: SMARTSTOCK_URL, DEVICE_CODE, DEVICE_KEY
-"""
 import argparse
 import json
 import os
@@ -59,7 +44,7 @@ def enviar(lote):
             return True
     except urllib.error.HTTPError as e:
         print(f"  HTTP {e.code}: {e.read().decode(errors='replace')}")
-    except Exception as e:  # sin conexion, timeout...
+    except Exception as e:
         print(f"  Error de conexion: {e}")
     return False
 
@@ -72,7 +57,7 @@ while a.ciclos == 0 or ciclo < a.ciclos:
     ciclo += 1
     seq += 1
     ts = int(time.time())
-    peso = a.tara + a.unidades * a.peso_unitario + random.uniform(-2, 2)  # ruido de la celda
+    peso = a.tara + a.unidades * a.peso_unitario + random.uniform(-2, 2)
     pendientes += [
         {"tipo": "TEMPERATURA", "valor": round(a.temp + random.uniform(-0.3, 0.3), 2), "seq": seq, "ts": ts},
         {"tipo": "HUMEDAD", "valor": round(a.hum + random.uniform(-1, 1), 2), "seq": seq, "ts": ts},

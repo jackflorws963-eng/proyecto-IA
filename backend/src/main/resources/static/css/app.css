@@ -1,4 +1,3 @@
-/* SmartStock IoT - estilos globales */
 :root {
   --bg: #f4f6f8;
   --panel: #ffffff;
@@ -22,7 +21,6 @@ h1 { font-size: 22px; margin: 0 0 4px; }
 h2 { font-size: 16px; margin: 0 0 12px; }
 .muted { color: var(--muted); }
 
-/* Layout */
 .app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
 .sidebar { background: #0b1f2a; color: #cfd8e3; padding: 18px 14px; position: sticky; top: 0; height: 100vh; }
 .logo { font-weight: 700; font-size: 18px; color: #fff; margin-bottom: 4px; }
@@ -35,7 +33,6 @@ h2 { font-size: 16px; margin: 0 0 12px; }
 .main { padding: 22px 26px 40px; min-width: 0; }
 .cabecera { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
 
-/* Paneles */
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 16px; }
 .grid { display: grid; gap: 16px; }
 .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -47,7 +44,6 @@ h2 { font-size: 16px; margin: 0 0 12px; }
 .kpi.alerta .v { color: var(--bad); }
 .kpi.ok .v { color: var(--ok); }
 
-/* Tablas */
 .tabla-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
@@ -55,7 +51,6 @@ th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: upp
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 tr:hover td { background: #fafbfc; }
 
-/* Etiquetas */
 .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
 .tag.ok { background: #dcfce7; color: var(--ok); }
 .tag.bad { background: #fee2e2; color: var(--bad); }
@@ -63,7 +58,6 @@ tr:hover td { background: #fafbfc; }
 .tag.info { background: #dbeafe; color: var(--info); }
 .tag.gris { background: #eef1f4; color: var(--muted); }
 
-/* Formularios */
 form.fila, .filtros { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
 input, select, textarea { font: inherit; padding: 8px 10px; border: 1px solid #cbd3dc; border-radius: 8px; background: #fff; color: var(--text); min-width: 120px; }
@@ -75,7 +69,6 @@ button.peligro { background: var(--bad); }
 button.mini { padding: 4px 9px; font-size: 12px; }
 button:disabled { opacity: .5; cursor: not-allowed; }
 
-/* Estados de carga / error / vacio */
 .estado { padding: 18px; text-align: center; color: var(--muted); }
 .estado.error { color: var(--bad); }
 .aviso { padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; display: none; }
@@ -85,7 +78,6 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .paginacion { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
 .chart-box { position: relative; height: 240px; }
 
-/* Asistente */
 .chat { height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; }
 .msg { max-width: 85%; padding: 9px 12px; border-radius: 12px; white-space: pre-wrap; line-height: 1.4; }
 .msg.ia { background: #fff; border: 1px solid var(--line); align-self: flex-start; }
@@ -100,12 +92,10 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .problema .titulo { font-weight: 600; margin: 6px 0 4px; }
 .problema .acciones { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
 
-/* Login */
 .login-body { display: grid; place-items: center; min-height: 100vh; background: linear-gradient(135deg, #0b1f2a, #0f766e); }
 .login-card { background: #fff; padding: 28px; border-radius: 14px; width: min(380px, 92vw); box-shadow: 0 20px 50px rgba(0,0,0,.25); }
 .login-card form { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
 
-/* Ventas (punto de venta) */
 .pos { grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); }
 form.columna { display: flex; flex-direction: column; gap: 10px; }
 input.cant { min-width: 0; width: 70px; padding: 4px 6px; text-align: right; }
@@ -130,7 +120,6 @@ input.cant { min-width: 0; width: 70px; padding: 4px 6px; text-align: right; }
 .ticket .anulada { margin-top: 8px; padding: 6px; text-align: center; border: 2px solid var(--bad); color: var(--bad); font-weight: 700; }
 .pie-ticket { text-align: center; margin-top: 12px; border-top: 1px dashed #000; padding-top: 8px; }
 
-/* Asistente de IA */
 .ia-pagina { grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr); align-items: start; }
 .ia-pagina .chat { height: 520px; }
 .msg .motor { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--brand); font-weight: 700; margin-bottom: 3px; }
@@ -147,11 +136,9 @@ input.cant { min-width: 0; width: 70px; padding: 4px 6px; text-align: right; }
 .ia-cabecera [data-motor] { flex: 1; font-size: 12px; }
 @media print { .ia-burbuja, .ia-panel { display: none !important; } }
 
-/* Autoria */
 .creditos { margin-top: 24px; font-size: 11px; color: #5d7286; }
 .login-card .creditos { color: var(--muted); text-align: center; margin-top: 18px; }
 
-/* Impresion: con el comprobante abierto solo se imprime el ticket */
 @media print {
   body.con-ticket .app { display: none; }
   body.con-ticket .modal { position: static; background: none; display: block; }
@@ -159,7 +146,6 @@ input.cant { min-width: 0; width: 70px; padding: 4px 6px; text-align: right; }
   body.con-ticket .acciones-modal { display: none; }
 }
 
-/* Movil */
 @media (max-width: 860px) {
   .app { grid-template-columns: 1fr; }
   .sidebar { position: static; height: auto; padding: 12px; }

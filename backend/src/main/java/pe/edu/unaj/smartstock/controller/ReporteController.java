@@ -13,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDate;
 
-/** GET /api/reportes/{tipo}.csv  (solo ADMIN). Tipos: existencias, movimientos, lecturas, alertas, discrepancias, ventas. */
 @RestController
 @RequestMapping("/api/reportes")
 public class ReporteController {
@@ -44,7 +43,6 @@ public class ReporteController {
             case "movimientos" -> service.movimientos(productoId, usuario, ini, fin);
             case "lecturas" -> {
                 if (sensorId == null) throw NegocioException.invalido("El reporte de lecturas requiere sensorId");
-                // ~17 000 lecturas por sensor y dia: un rango sin limite podria agotar la memoria
                 if (Duration.between(ini, fin).toDays() > MAX_DIAS_LECTURAS) {
                     throw NegocioException.invalido("El reporte de lecturas admite como maximo " + MAX_DIAS_LECTURAS + " dias");
                 }

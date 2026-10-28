@@ -17,14 +17,6 @@ import pe.edu.unaj.smartstock.repository.UsuarioRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-/**
- * Reglas de alertas:
- *  - CREAR: si la condicion se cumple y no existe alerta no cerrada con la misma clave.
- *  - ACTUALIZAR: si ya existe, se incrementan ocurrencias y ultima_vez (no se duplica).
- *  - CERRAR: cuando la condicion se normaliza (automatico) o se resuelve la causa.
- *  - RECONOCER: un usuario indica que ya la vio; sigue activa hasta normalizarse.
- * La clave tiene la forma TIPO:entidad:id (ej. TEMPERATURA:ubicacion:1).
- */
 @Service
 public class AlertaService {
 

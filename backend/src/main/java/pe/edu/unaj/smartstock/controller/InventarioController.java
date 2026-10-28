@@ -37,7 +37,6 @@ public class InventarioController {
         return service.registrar(r, auth.getName(), AuthController.esAdmin(auth));
     }
 
-    /** GET /api/movimientos?productoId=1&usuario=admin&desde=2026-10-01&hasta=2026-10-31 */
     @GetMapping("/movimientos")
     public PaginaResponse<MovimientoResponse> historial(
             @RequestParam(required = false) Long productoId,
@@ -49,13 +48,11 @@ public class InventarioController {
         return service.historial(productoId, usuario, inicio(desde, 30), fin(hasta), pagina, tamano);
     }
 
-    /** Inicio del dia en hora de Peru; por defecto, hace N dias. */
     static OffsetDateTime inicio(LocalDate d, int diasAtras) {
         LocalDate f = d != null ? d : LocalDate.now(ZONA).minusDays(diasAtras);
         return f.atStartOfDay(ZONA).toOffsetDateTime();
     }
 
-    /** Fin exclusivo: inicio del dia siguiente. */
     static OffsetDateTime fin(LocalDate d) {
         LocalDate f = d != null ? d : LocalDate.now(ZONA);
         return f.plusDays(1).atStartOfDay(ZONA).toOffsetDateTime();

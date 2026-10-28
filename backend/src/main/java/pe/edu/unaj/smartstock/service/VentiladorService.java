@@ -17,14 +17,6 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
-/**
- * Ventilador conectado al rele del ESP32.
- * El servidor guarda el estado ordenado y el ESP32 lo recibe en la respuesta de cada lote
- * (LoteLecturasResponse.ventilador), asi no hace falta abrir un puerto en el ESP32.
- *  - AUTO: se enciende si la temperatura supera temp_max de la ubicacion y se apaga
- *    cuando baja HISTERESIS grados por debajo (evita encender y apagar en el limite).
- *  - ENCENDIDO / APAGADO: orden manual del usuario o del asistente; AUTO la libera.
- */
 @Service
 public class VentiladorService {
 
@@ -45,7 +37,6 @@ public class VentiladorService {
         this.auditoria = auditoria;
     }
 
-    /** Llamado por IotService con cada lectura VALIDA de temperatura (dentro de su transaccion). */
     void evaluarTemperatura(Dispositivo d, BigDecimal temperatura) {
         if (d.getVentiladorModo() != ModoVentilador.AUTO) return;
         BigDecimal max = d.getUbicacion().getTempMax();
@@ -73,7 +64,6 @@ public class VentiladorService {
         return DispositivoResponse.de(d, dispositivos.enLinea(d));
     }
 
-    /** Ultimo valor valido de un sensor del dispositivo (vacio si no tiene ese sensor o lecturas). */
     @Transactional(readOnly = true)
     public Optional<BigDecimal> ultimaLectura(Dispositivo d, TipoSensor tipo) {
         return sensores.findByDispositivoIdAndTipo(d.getId(), tipo)

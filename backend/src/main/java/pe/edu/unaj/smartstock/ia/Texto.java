@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/** Procesamiento de texto en espanol para el clasificador y la memoria (sin librerias externas). */
 public final class Texto {
 
     private static final Set<String> VACIAS = Set.of(
@@ -17,13 +16,11 @@ public final class Texto {
 
     private Texto() { }
 
-    /** Minusculas, sin tildes ni signos: «¿Qué ERRORES hay?» -> "que errores hay". */
     public static String normalizar(String s) {
         String sinTildes = Normalizer.normalize(s == null ? "" : s, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         return sinTildes.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9ñ ]", " ").replaceAll("\\s+", " ").trim();
     }
 
-    /** Raiz aproximada: quita plurales y terminaciones verbales frecuentes ("ventas" -> "vent"). */
     static String raiz(String palabra) {
         String p = palabra;
         for (String fin : new String[]{"aciones", "acion", "amente", "ando", "iendo", "aron", "ieron", "emos", "amos",
@@ -33,7 +30,6 @@ public final class Texto {
         return p;
     }
 
-    /** Palabras significativas (raices) mas pares de palabras consecutivas, que capturan "stock bajo", "da de baja". */
     public static List<String> rasgos(String texto) {
         List<String> palabras = new ArrayList<>();
         for (String w : normalizar(texto).split(" ")) {
@@ -45,7 +41,6 @@ public final class Texto {
         return r;
     }
 
-    /** Distancia de edicion (para tolerar errores de dictado: "arros" ~ "arroz"). */
     static int distancia(String a, String b) {
         int[] previa = new int[b.length() + 1];
         int[] actual = new int[b.length() + 1];
@@ -63,10 +58,6 @@ public final class Texto {
         return previa[b.length()];
     }
 
-    /**
-     * Cuanto se parece una frase a un nombre (0 a 1): proporcion de palabras del nombre que aparecen
-     * en la frase, aceptando un error de dictado por palabra larga.
-     */
     static double parecido(String frase, String nombre) {
         String[] palabrasFrase = normalizar(frase).split(" ");
         String[] palabrasNombre = normalizar(nombre).split(" ");

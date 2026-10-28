@@ -13,11 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * Memoria permanente del asistente: lo que las personas le ensenan ("recuerda que el proveedor del arroz
- * es Molinos del Sur"). En cada pregunta se recuperan los recuerdos mas parecidos (similitud por
- * palabras ponderada por rareza, tipo TF-IDF) y todas las preferencias.
- */
 @Service
 public class MemoriaIa {
 
@@ -37,13 +32,11 @@ public class MemoriaIa {
         String limpio = texto == null ? "" : texto.trim();
         if (limpio.length() < 3) throw NegocioException.invalido("No hay nada que recordar");
         if (limpio.length() > 500) limpio = limpio.substring(0, 500);
-        // No duplica lo que ya sabe
         for (Recuerdo r : todos()) {
             if (Texto.normalizar(r.texto()).equals(Texto.normalizar(limpio))) return r;
         }
         Integer total = jdbc.queryForObject("SELECT count(*) FROM ia_memoria", Integer.class);
         if (total != null && total >= MAXIMO) {
-            // Olvida lo menos util: lo que nunca se uso y es mas antiguo
             jdbc.update("DELETE FROM ia_memoria WHERE id = (SELECT id FROM ia_memoria ORDER BY usos, creado_en LIMIT 1)");
         }
         Long id = jdbc.queryForObject("INSERT INTO ia_memoria (tipo, texto, username) VALUES (?, ?, ?) RETURNING id",
@@ -63,11 +56,9 @@ public class MemoriaIa {
                         rs.getInt(5), rs.getObject(6, OffsetDateTime.class)));
     }
 
-    /** Recuerdos utiles para responder: todas las preferencias y los hechos mas parecidos a la pregunta. */
     public List<Recuerdo> relevantes(String pregunta, int maximo) {
         List<Recuerdo> todos = todos();
         if (todos.isEmpty()) return List.of();
-        // Rareza de cada rasgo: los que aparecen en pocos recuerdos pesan mas
         Map<String, Integer> frecuencia = new HashMap<>();
         Map<Long, Set<String>> rasgos = new HashMap<>();
         for (Recuerdo r : todos) {
@@ -96,7 +87,6 @@ public class MemoriaIa {
         return elegidos;
     }
 
-    /** Dato aprendido que responde claramente la pregunta (comparten al menos 3 rasgos, p. ej. "proveedor", "arroz"). */
     public Optional<Recuerdo> respuestaDirecta(String pregunta) {
         Set<String> consulta = new HashSet<>(Texto.rasgos(pregunta));
         return todos().stream().filter(r -> r.tipo() == Tipo.HECHO)

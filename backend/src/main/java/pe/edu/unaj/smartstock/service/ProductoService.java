@@ -42,7 +42,6 @@ public class ProductoService {
         int t = Math.min(Math.max(tamano, 1), 100);
         Page<Producto> page = productos.buscar(q == null ? "" : q.trim(), categoriaId, soloActivos,
                 PageRequest.of(Math.max(pagina, 0), t, Sort.by("codigo")));
-        // Stock de toda la pagina en una sola consulta (antes: una consulta por producto)
         Map<Long, Long> stock = new HashMap<>();
         if (page.hasContent()) {
             for (Object[] fila : inventario.stockTotales(page.getContent().stream().map(Producto::getId).toList())) {

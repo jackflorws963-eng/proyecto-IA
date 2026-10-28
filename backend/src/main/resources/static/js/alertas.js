@@ -54,8 +54,6 @@ document.querySelectorAll('[data-rep]').forEach(btn => btn.addEventListener('cli
   const u = document.getElementById('rUsuario').value.trim();
   if (btn.dataset.rep === 'movimientos' && u) params.set('usuario', u);
   const url = `/api/reportes/${btn.dataset.rep}.csv?${params}`;
-  // En la app de escritorio la descarga la hace Java (dialogo "Guardar como");
-  // en el navegador, descarga directa: el navegador envia la cookie de sesion
   if (window.escritorio) window.escritorio.descargar(url);
   else window.location.href = url;
 }));

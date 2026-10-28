@@ -1,6 +1,3 @@
-; SmartStock IoT - instalador para Windows (Inno Setup 6).  Autor: Brayan (BR)
-; No se compila a mano: lo llama empaquetar-escritorio.ps1, que define Version, Origen y Salida.
-
 #ifndef Version
   #define Version "2.1.0"
 #endif
@@ -28,8 +25,6 @@ VersionInfoDescription=Instalador de {#Nombre}
 DefaultDirName={autopf}\{#Nombre}
 DefaultGroupName={#Nombre}
 DisableProgramGroupPage=yes
-; Por defecto se instala solo para el usuario actual (sin permisos de administrador);
-; el asistente permite elegir "para todos los usuarios"
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 ArchitecturesAllowed=x64compatible
@@ -68,7 +63,6 @@ Filename: "{app}\{#Ejecutable}"; Description: "Abrir {#Nombre}"; Flags: nowait p
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""{#Nombre}"""; Flags: runhidden; RunOnceId: "QuitarFirewall"; Check: IsAdminInstallMode
 
 [Code]
-// PostgreSQL es requisito: se avisa (sin bloquear) si no se encuentra el servicio
 function PostgresInstalado(): Boolean;
 var
   Nombres: TArrayOfString;

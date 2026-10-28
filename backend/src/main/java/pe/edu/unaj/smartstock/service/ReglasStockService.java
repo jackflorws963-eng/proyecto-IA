@@ -7,7 +7,6 @@ import pe.edu.unaj.smartstock.entity.Enums.TipoAlerta;
 import pe.edu.unaj.smartstock.entity.Producto;
 import pe.edu.unaj.smartstock.repository.InventarioRepository;
 
-/** Regla de alerta de stock minimo (se evalua tras cada movimiento o cambio de producto). */
 @Service
 public class ReglasStockService {
 

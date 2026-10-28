@@ -13,19 +13,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Pronostico de demanda y agotamiento por producto, aprendido de las salidas reales (ventas incluidas).
- * Usa suavizado exponencial simple sobre la demanda diaria de los ultimos 60 dias: da mas peso a lo
- * reciente, asi el pronostico se adapta solo cuando cambia el ritmo de ventas. Se recalcula en cada consulta.
- */
 @Service
 public class PronosticoService {
 
     static final ZoneId ZONA = ZoneId.of("America/Lima");
     static final int DIAS_HISTORIA = 60;
-    /** Peso de la observacion mas reciente (0..1): mas alto = reacciona mas rapido a los cambios. */
     static final double ALFA = 0.3;
-    /** Dias de cobertura que se buscan al sugerir cuanto reponer. */
     static final int DIAS_COBERTURA = 14;
 
     public record Pronostico(Long productoId, String codigo, String nombre, long stock, int stockMinimo,
@@ -38,12 +31,10 @@ public class PronosticoService {
         this.jdbc = jdbc;
     }
 
-    /** Todos los productos activos, primero los que se agotan antes. */
     public List<Pronostico> calcular() {
         LocalDate hoy = LocalDate.now(ZONA);
         LocalDate inicio = hoy.minusDays(DIAS_HISTORIA - 1L);
 
-        // Salidas por producto y dia (las ventas generan movimientos SALIDA)
         Map<Long, Map<LocalDate, Long>> salidas = new HashMap<>();
         jdbc.query("""
                 SELECT producto_id, (created_at AT TIME ZONE 'America/Lima')::date AS dia, sum(cantidad)
@@ -77,7 +68,6 @@ public class PronosticoService {
             return new Pronostico(id, codigo, nombre, stock, stockMinimo, BigDecimal.ZERO, null, null,
                     Math.max(stockMinimo - stock, 0), 0, "SIN_DATOS");
         }
-        // La serie empieza el primer dia con salidas: un producto nuevo no se subestima con ceros previos
         LocalDate primero = porDia.keySet().stream().min(LocalDate::compareTo).orElse(hoy);
         double nivel = porDia.get(primero);
         int dias = 1;

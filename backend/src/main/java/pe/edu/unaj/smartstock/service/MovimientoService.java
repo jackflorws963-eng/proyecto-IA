@@ -17,12 +17,6 @@ import pe.edu.unaj.smartstock.repository.*;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-/**
- * UNICO punto del sistema que modifica las existencias.
- * Cada movimiento: valida reglas -> bloquea filas de inventario -> actualiza
- * cantidades -> guarda el movimiento -> audita -> evalua alerta de stock.
- * Todo en una sola transaccion: si algo falla, no se aplica nada.
- */
 @Service
 public class MovimientoService {
 
@@ -52,7 +46,6 @@ public class MovimientoService {
         return MovimientoResponse.de(registrarInterno(r, username, esAdmin, null));
     }
 
-    /** Usado tambien por DiscrepanciaService para aplicar ajustes aprobados. */
     @Transactional
     public Movimiento registrarInterno(MovimientoRequest r, String username, boolean esAdmin, Discrepancia discrepancia) {
         TipoMovimiento tipo = r.tipo();
@@ -68,8 +61,6 @@ public class MovimientoService {
 
         Producto producto = productos.findById(r.productoId())
                 .orElseThrow(() -> NegocioException.noEncontrado("Producto", r.productoId()));
-        // Un ajuste aprobado desde una discrepancia refleja lo que hay fisicamente: se permite
-        // aunque el producto o la ubicacion se hayan desactivado despues.
         boolean desdeDiscrepancia = discrepancia != null;
         if (!producto.isActivo() && !desdeDiscrepancia
                 && tipo != TipoMovimiento.SALIDA && tipo != TipoMovimiento.AJUSTE_NEGATIVO) {
@@ -96,7 +87,6 @@ public class MovimientoService {
             throw NegocioException.invalido("Origen y destino no pueden ser iguales");
         }
 
-        // Bloqueo en orden de id para evitar interbloqueos en transferencias cruzadas
         if (origen != null && destino != null && destino.getId() < origen.getId()) {
             Inventario invDestino = obtenerOCrearBloqueado(producto, destino);
             Inventario invOrigen = obtenerOCrearBloqueado(producto, origen);
@@ -141,8 +131,6 @@ public class MovimientoService {
 
     private Inventario obtenerOCrearBloqueado(Producto p, Ubicacion u) {
         return inventario.bloquear(p.getId(), u.getId()).orElseGet(() -> {
-            // INSERT ... ON CONFLICT DO NOTHING: si otra transaccion crea la fila al mismo
-            // tiempo no hay error; el SELECT ... FOR UPDATE espera y luego la obtiene.
             inventario.crearSiNoExiste(p.getId(), u.getId());
             return inventario.bloquear(p.getId(), u.getId()).orElseThrow();
         });
@@ -154,7 +142,6 @@ public class MovimientoService {
         return u;
     }
 
-    // ---------- Consultas ----------
     @Transactional(readOnly = true)
     public List<InventarioResponse> existencias(Long productoId, Long ubicacionId) {
         return inventario.filtrar(productoId, ubicacionId).stream().map(InventarioResponse::de).toList();

@@ -8,10 +8,6 @@ import pe.edu.unaj.smartstock.entity.Enums.EstadoAlerta;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-/**
- * Reportes en CSV (abren directamente en Excel).
- * Separador ';' y BOM UTF-8 para que Excel en espanol muestre bien tildes y columnas.
- */
 @Service
 public class ReporteService {
 
@@ -43,7 +39,6 @@ public class ReporteService {
     @Transactional(readOnly = true)
     public String movimientos(Long productoId, String usuario, OffsetDateTime desde, OffsetDateTime hasta) {
         StringBuilder sb = cabecera("id;fecha;tipo;producto;origen;destino;cantidad;motivo;usuario;discrepancia");
-        // Recorre todas las paginas (antes se cortaba en 500 filas sin avisar)
         PaginaResponse<MovimientoResponse> pagina;
         int n = 0;
         do {
@@ -87,7 +82,6 @@ public class ReporteService {
         return sb.toString();
     }
 
-    /** Una fila por producto vendido (las anuladas se incluyen con su estado para cuadrar caja). */
     @Transactional(readOnly = true)
     public String ventas(OffsetDateTime desde, OffsetDateTime hasta) {
         StringBuilder sb = cabecera("numero;fecha;comprobante;estado;cliente_documento;cliente;metodo_pago;vendedor;"
@@ -119,7 +113,6 @@ public class ReporteService {
         sb.append("\r\n");
     }
 
-    /** Escapa comillas y evita inyeccion de formulas en Excel (=, +, -, @). */
     static String escapar(Object v) {
         if (v == null) return "";
         String s = v.toString();

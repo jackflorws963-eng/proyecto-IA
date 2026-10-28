@@ -18,20 +18,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Al iniciar crea los usuarios de demostracion y la clave del dispositivo,
- * tomando las contrasenas de variables de entorno (nunca del repositorio).
- * Si los datos ya existen, solo reemplaza una contrasena/clave que siga siendo la de
- * desarrollo (por una propia de la variable); nunca pisa valores cambiados despues.
- * Si alguna credencial conserva su valor de desarrollo, el backend NO arranca,
- * salvo que se permita explicitamente con PERMITIR_CLAVES_DEV=true (solo en su PC).
- */
 @Component
 public class DataInitializer implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
-    // Valores por defecto de application.yml (solo para desarrollo local)
     static final String ADMIN_DEV = "Admin123!";
     static final String OPERADOR_DEV = "Operador123!";
     static final String DEVICE_KEY_DEV = "dev-device-key-cambiar";
@@ -62,12 +53,6 @@ public class DataInitializer implements CommandLineRunner {
         verificarCredenciales(dbPassword, permitirClavesDev);
     }
 
-    /**
-     * Se ejecuta al crear el bean: falla el arranque antes de exponer la aplicacion.
-     * Revisa la credencial que QUEDARA en uso: si el usuario ya existe, importa su
-     * contrasena guardada (una variable nueva la reemplaza en run() solo si la guardada
-     * es la de desarrollo).
-     */
     private void verificarCredenciales(String dbPassword, boolean permitirClavesDev) {
         List<String> deDesarrollo = new ArrayList<>();
         if (quedaDeDesarrollo(ADMIN_DEV, adminPassword, usuarios.findByUsername("admin").map(Usuario::getPasswordHash))) {
@@ -92,12 +77,8 @@ public class DataInitializer implements CommandLineRunner {
                 deDesarrollo);
     }
 
-    /**
-     * true si, tras run(), seguira vigente el valor de desarrollo:
-     * la variable trae ese valor y no hay nada guardado, o lo guardado tambien es de desarrollo.
-     */
     private boolean quedaDeDesarrollo(String valorDev, String valorNuevo, Optional<String> hashGuardado) {
-        if (!valorDev.equals(valorNuevo)) return false;   // se aplicara el valor propio
+        if (!valorDev.equals(valorNuevo)) return false;
         return hashGuardado.map(h -> esPendienteODesarrollo(h, valorDev)).orElse(true);
     }
 
@@ -122,10 +103,6 @@ public class DataInitializer implements CommandLineRunner {
         });
     }
 
-    /**
-     * Crea el usuario si no existe. Si existe, solo reemplaza su contrasena cuando la guardada
-     * es la de desarrollo y la variable trae una propia (no pisa contrasenas cambiadas despues).
-     */
     private void crearOActualizarUsuario(String username, String nombre, String rolNombre, String password, String valorDev) {
         Optional<Usuario> existente = usuarios.findByUsername(username);
         if (existente.isPresent()) {

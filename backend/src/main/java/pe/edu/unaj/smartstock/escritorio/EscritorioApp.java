@@ -40,12 +40,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-/**
- * SmartStock IoT como aplicacion de escritorio.
- * Arranca el backend Spring Boot dentro del mismo proceso (sigue atendiendo al ESP32 por la red)
- * y muestra el frontend en una ventana propia con un navegador integrado (WebView).
- * En el primer arranque abre el asistente de instalacion. Al cerrar la ventana se detiene el servidor.
- */
 public class EscritorioApp extends Application {
 
     static final String TITULO = "SmartStock IoT";
@@ -53,12 +47,10 @@ public class EscritorioApp extends Application {
     private ConfigurableApplicationContext contexto;
     private Stage presentacion;
     private Label estado;
-    // Referencia fuerte: si solo la tuviera JavaScript, el recolector de basura la eliminaria
     private PuenteEscritorio puente;
 
     @Override
     public void start(Stage ventana) {
-        // La salida es siempre explicita: entre la presentacion y el asistente no queda ninguna ventana visible
         Platform.setImplicitExit(false);
         mostrarPresentacion();
         enSegundoPlano(() -> arrancar(ventana));
@@ -81,10 +73,8 @@ public class EscritorioApp extends Application {
         presentacion.show();
     }
 
-    /** Hilo de fondo: configura el equipo si hace falta y arranca Spring Boot. */
     private void arrancar(Stage ventana) {
         Entorno.registrarConfiguracionLocal();
-        // Sin consola (instalador de Windows) el registro queda en un archivo
         if (System.getProperty("logging.file.name") == null) {
             System.setProperty("logging.file.name", Entorno.CARPETA.resolve("smartstock.log").toString());
         }
@@ -105,7 +95,6 @@ public class EscritorioApp extends Application {
         }
     }
 
-    /** Error de arranque: si es de base de datos ofrece volver a configurar, si no, explica y sale. */
     private void fallo(Stage ventana, Throwable e) {
         String explicacion = explicar(e);
         boolean deBaseDatos = esErrorBaseDatos(e);
@@ -133,10 +122,6 @@ public class EscritorioApp extends Application {
         });
     }
 
-    /**
-     * Asistente de instalacion (hilo de fondo). Repite el formulario hasta que la configuracion
-     * funcione o la persona cancele. Devuelve true si quedo configurado.
-     */
     private boolean configurarEquipo(String errorInicial) {
         Datos datos = null;
         String error = errorInicial;
@@ -196,7 +181,6 @@ public class EscritorioApp extends Application {
         WebEngine motor = web.getEngine();
         puente = new PuenteEscritorio(ventana, base, motor);
 
-        // Dialogos de JavaScript (alert, confirm, prompt) como ventanas nativas
         motor.setOnAlert(e -> mensaje(Alert.AlertType.INFORMATION, e.getData()));
         motor.setConfirmHandler(texto -> {
             Alert a = new Alert(Alert.AlertType.CONFIRMATION, texto, ButtonType.OK, ButtonType.CANCEL);
@@ -211,7 +195,6 @@ public class EscritorioApp extends Application {
             d.initOwner(ventana);
             return d.showAndWait().orElse(null);
         });
-        // En cada pagina se expone window.escritorio (reportes, comprobantes y voz)
         motor.getLoadWorker().stateProperty().addListener((obs, antes, ahora) -> {
             if (ahora == Worker.State.SUCCEEDED) {
                 ((JSObject) motor.executeScript("window")).setMember("escritorio", puente);
@@ -220,8 +203,6 @@ public class EscritorioApp extends Application {
         motor.titleProperty().addListener((obs, antes, ahora) ->
                 ventana.setTitle(ahora == null ? TITULO : ahora));
 
-        // Del tamano del area de trabajo: con escala de Windows (125 %, 150 %) maximizar
-        // antes de mostrar la ventana la deja mas grande que la pantalla
         Rectangle2D area = Screen.getPrimary().getVisualBounds();
         Scene escena = new Scene(web, area.getWidth(), area.getHeight());
         escena.setOnKeyPressed(e -> {
@@ -245,8 +226,6 @@ public class EscritorioApp extends Application {
         System.exit(0);
     }
 
-    // ----------------------------------------------------------------- utilidades
-
     static Image icono() {
         return new Image(EscritorioApp.class.getResource("/static/img/logo.png").toExternalForm());
     }
@@ -258,7 +237,6 @@ public class EscritorioApp extends Application {
         hilo.start();
     }
 
-    /** Ejecuta en el hilo de JavaFX y espera el resultado (se llama desde un hilo de fondo). */
     private static <T> T enFx(Supplier<T> accion) {
         CompletableFuture<T> futuro = new CompletableFuture<>();
         Platform.runLater(() -> {
@@ -295,7 +273,6 @@ public class EscritorioApp extends Application {
                 || detalle.contains("does not exist");
     }
 
-    /** Mensaje entendible para los errores de arranque mas comunes. */
     private static String explicar(Throwable e) {
         Throwable r = raiz(e);
         if (r instanceof PortInUseException p) {

@@ -12,7 +12,6 @@ import pe.edu.unaj.smartstock.service.VentiladorService;
 
 import java.util.List;
 
-/** Configuracion IoT (solo ADMIN, ver SecurityConfig). */
 @RestController
 @RequestMapping("/api")
 public class DispositivoController {
@@ -43,7 +42,6 @@ public class DispositivoController {
         return dispositivos.cambiarEstado(id, activo);
     }
 
-    /** PATCH /api/dispositivos/1/ventilador?modo=AUTO|ENCENDIDO|APAGADO */
     @PatchMapping("/dispositivos/{id}/ventilador")
     public DispositivoResponse ventilador(@PathVariable Long id, @RequestParam ModoVentilador modo) {
         return ventilador.cambiarModo(id, modo);
@@ -56,7 +54,6 @@ public class DispositivoController {
     @ResponseStatus(HttpStatus.CREATED)
     public SensorResponse crearSensor(@Valid @RequestBody SensorRequest r) { return dispositivos.crearSensor(r); }
 
-    /** PATCH /api/sensores/3?productoId=2&activo=true */
     @PatchMapping("/sensores/{id}")
     public SensorResponse editarSensor(@PathVariable Long id,
                                        @RequestParam(required = false) Long productoId,

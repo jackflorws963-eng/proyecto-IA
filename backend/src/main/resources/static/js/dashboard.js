@@ -3,7 +3,7 @@
 const graficos = {};
 
 function graficoLinea(id, color) {
-  if (typeof Chart === 'undefined') return null;   // sin internet no carga Chart.js: el resto sigue funcionando
+  if (typeof Chart === 'undefined') return null;
   return new Chart(document.getElementById(id), {
     type: 'line',
     data: { labels: [], datasets: [{ data: [], borderColor: color, backgroundColor: color + '22', fill: true, pointRadius: 0, tension: .25, borderWidth: 2 }] },

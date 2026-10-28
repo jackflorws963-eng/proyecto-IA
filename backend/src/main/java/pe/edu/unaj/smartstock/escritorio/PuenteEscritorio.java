@@ -22,12 +22,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Objeto que JavaScript ve como window.escritorio.
- * El navegador integrado no descarga archivos, asi que los reportes CSV se piden desde Java
- * (con la misma cookie de sesion del usuario) y se guardan con el dialogo "Guardar como".
- * Tambien da voz al asistente: el navegador integrado no trae sintesis ni reconocimiento de voz.
- */
 public class PuenteEscritorio {
 
     private static final Pattern NOMBRE_ARCHIVO = Pattern.compile("filename=\"?([^\";]+)\"?");
@@ -46,7 +40,6 @@ public class PuenteEscritorio {
         this.motor = motor;
     }
 
-    /** Imprime la pagina actual (ventas.js deja visible solo el ticket con @media print). */
     public void imprimir() {
         PrinterJob trabajo = PrinterJob.createPrinterJob();
         if (trabajo == null) {
@@ -61,15 +54,12 @@ public class PuenteEscritorio {
         }
     }
 
-    // ---------- Voz del asistente (ver asistente.js) ----------
-
     public boolean vozDisponible() { return Voz.disponible(); }
 
     public void hablar(String texto) { voz.hablar(texto); }
 
     public void callar() { voz.callar(); }
 
-    /** Avisa a la pagina con window.vozEvento(tipo, dato): tipo = escuchando | texto | error. */
     public void escuchar() {
         voz.escuchar(() -> avisarPagina("escuchando", ""),
                 texto -> avisarPagina("texto", texto),
@@ -84,12 +74,10 @@ public class PuenteEscritorio {
                 motor.executeScript("window.vozEvento && window.vozEvento(" + JSON.writeValueAsString(tipo) + ", "
                         + JSON.writeValueAsString(dato) + ")");
             } catch (IOException | RuntimeException ignorada) {
-                // la pagina cambio mientras se escuchaba: no hay a quien avisar
             }
         });
     }
 
-    /** Llamado desde alertas.js con una ruta relativa, p. ej. /api/reportes/existencias.csv?desde=... */
     public void descargar(String ruta) {
         URI uri = base.resolve(ruta);
         if (!uri.getPath().startsWith("/api/reportes/")) return;
@@ -135,13 +123,11 @@ public class PuenteEscritorio {
         }
     }
 
-    /** Los errores de la API llegan como JSON {"mensaje": "..."} (ver RespuestaJson). */
     private static String mensajeError(HttpResponse<byte[]> resp) {
         try {
             String mensaje = JSON.readTree(resp.body()).path("mensaje").asText("");
             if (!mensaje.isBlank()) return mensaje;
         } catch (IOException ignorada) {
-            // cuerpo que no es JSON: se informa solo el codigo HTTP
         }
         return "Error HTTP " + resp.statusCode();
     }

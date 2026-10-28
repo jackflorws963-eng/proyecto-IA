@@ -21,18 +21,9 @@ import pe.edu.unaj.smartstock.security.SpaCsrfTokenRequestHandler;
 
 import static pe.edu.unaj.smartstock.security.RespuestaJson.escribir;
 
-/**
- * Dos cadenas de seguridad:
- *  1) /api/iot/**  -> dispositivos ESP32, sin sesion, autenticados por cabeceras (sin cookies: no aplica CSRF).
- *  2) resto        -> usuarios con sesion (cookie HttpOnly + SameSite=Lax), roles ADMIN/OPERADOR.
- * CSRF activo en la cadena web: token en la cookie XSRF-TOKEN que el frontend devuelve
- * en la cabecera X-XSRF-TOKEN (ver js/api.js). SameSite=Lax por si solo no basta:
- * otra aplicacion en el mismo sitio (otro puerto de localhost, un subdominio) si envia la cookie.
- */
 @Configuration
 public class SecurityConfig {
 
-    /** Politica de contenido: solo scripts propios (Chart.js se sirve localmente); sin scripts en linea. */
     static final String CSP = "default-src 'self'; script-src 'self'; "
             + "style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; "
             + "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
@@ -65,11 +56,8 @@ public class SecurityConfig {
                 .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
             .addFilterBefore(new LoginLimiteFilter(intentos), UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(a -> a
-                // Frontend estatico (cada pagina verifica la sesion con /api/auth/me)
                 .requestMatchers("/", "/*.html", "/css/**", "/js/**", "/img/**", "/favicon.ico", "/error").permitAll()
-                // Estado del servidor (sin datos sensibles): Docker y el instalador lo consultan
                 .requestMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
-                // Solo ADMIN: configuracion, catalogo (escritura), revision y reportes
                 .requestMatchers(HttpMethod.POST, "/api/productos/**", "/api/categorias/**", "/api/ubicaciones/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/productos/**", "/api/categorias/**", "/api/ubicaciones/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/api/productos/**").hasRole("ADMIN")
@@ -77,7 +65,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/discrepancias/*/aprobar", "/api/discrepancias/*/rechazar").hasRole("ADMIN")
                 .requestMatchers("/api/auditoria/**", "/api/reportes/**").hasRole("ADMIN")
                 .requestMatchers("/api/ventas/*/anular").hasRole("ADMIN")
-                // Resto de la API: cualquier usuario autenticado (ADMIN u OPERADOR)
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().denyAll())
             .formLogin(f -> f

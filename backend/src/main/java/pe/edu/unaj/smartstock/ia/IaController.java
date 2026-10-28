@@ -9,10 +9,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Asistente de IA local (cualquier usuario autenticado). Los permisos por rol se aplican
- * dentro de cada herramienta, igual que en el resto de la API.
- */
 @RestController
 @RequestMapping("/api/ia")
 public class IaController {
@@ -33,7 +29,6 @@ public class IaController {
         this.pronostico = pronostico;
     }
 
-    /** POST /api/ia/mensaje {"texto":"¿cuándo se acaba el arroz?"} */
     @PostMapping("/mensaje")
     public AsistenteIa.Respuesta mensaje(@Valid @RequestBody MensajeRequest r, Authentication auth) {
         return asistente.mensaje(r.texto(), auth);
@@ -49,7 +44,6 @@ public class IaController {
         return asistente.cancelar(id, auth);
     }
 
-    /** La persona elige la intencion correcta de una frase que el asistente no entendio: la aprende. */
     @PostMapping("/aprender")
     public AsistenteIa.Respuesta aprender(@Valid @RequestBody AprenderRequest r, Authentication auth) {
         return asistente.aprender(r.texto(), r.intencion(), auth);

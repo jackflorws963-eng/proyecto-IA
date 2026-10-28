@@ -20,7 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/** Convierte cualquier error en una respuesta JSON uniforme. */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

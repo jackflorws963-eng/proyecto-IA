@@ -31,7 +31,6 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
            """)
     List<Object[]> totales(@Param("desde") OffsetDateTime desde, @Param("hasta") OffsetDateTime hasta);
 
-    /** [codigo, nombre, unidades, importe] de los productos mas vendidos (ventas no anuladas). */
     @Query("""
            SELECT d.producto.codigo, d.producto.nombre, SUM(d.cantidad), SUM(d.importe)
            FROM VentaDetalle d

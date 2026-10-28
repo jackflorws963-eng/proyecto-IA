@@ -19,12 +19,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Autenticacion de dispositivos IoT, independiente de los usuarios.
- * Cabeceras: X-Device-Code (codigo del ESP32) y X-Device-Key (clave secreta).
- * La clave se compara contra el hash BCrypt guardado en la tabla dispositivo.
- * Tras varios intentos fallidos desde una IP, esa IP queda bloqueada unos minutos.
- */
 public class DispositivoAuthFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(DispositivoAuthFilter.class);
@@ -56,7 +50,6 @@ public class DispositivoAuthFilter extends OncePerRequestFilter {
                     var auth = new UsernamePasswordAuthenticationToken(
                             new DispositivoPrincipal(d.get().getId(), d.get().getCodigo()), null,
                             List.of(new SimpleGrantedAuthority("ROLE_DEVICE")));
-                    // Contexto nuevo (no se modifica uno existente que pudiera estar compartido)
                     SecurityContext contexto = SecurityContextHolder.createEmptyContext();
                     contexto.setAuthentication(auth);
                     SecurityContextHolder.setContext(contexto);
@@ -70,13 +63,11 @@ public class DispositivoAuthFilter extends OncePerRequestFilter {
         chain.doFilter(req, res);
     }
 
-    /** Evita inyectar saltos de linea u otros caracteres en el log (el codigo lo envia el cliente). */
     static String paraLog(String s) {
         String limpio = s.replaceAll("[^A-Za-z0-9_-]", "?");
         return limpio.length() > 40 ? limpio.substring(0, 40) + "..." : limpio;
     }
 
-    /** Identidad del dispositivo autenticado. getName() se usa en la auditoria. */
     public record DispositivoPrincipal(Long id, String codigo) implements java.security.Principal {
         @Override
         public String getName() { return "device:" + codigo; }

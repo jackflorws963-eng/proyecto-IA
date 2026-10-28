@@ -7,13 +7,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Limita los intentos fallidos de autenticacion (fuerza bruta).
- * Tras MAX_INTENTOS fallos dentro de VENTANA, la clave queda bloqueada durante BLOQUEO.
- * La clave combina usuario/dispositivo e IP: asi un atacante no puede bloquear
- * la cuenta de otra persona desde su propia maquina.
- * Se guarda en memoria: se reinicia al reiniciar el backend (suficiente para un solo servidor).
- */
 @Component
 public class IntentosFallidos {
 

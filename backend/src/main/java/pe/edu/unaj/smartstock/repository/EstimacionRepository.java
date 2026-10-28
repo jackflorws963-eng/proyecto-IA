@@ -9,7 +9,6 @@ import java.util.Optional;
 
 public interface EstimacionRepository extends JpaRepository<Estimacion, Long> {
     Optional<Estimacion> findFirstBySensorIdOrderByIdDesc(Long sensorId);
-    /** Ultimas estimaciones del sensor (la cantidad la define el Pageable). */
     List<Estimacion> findBySensorIdOrderByIdDesc(Long sensorId, Pageable pageable);
     List<Estimacion> findTop50BySensorIdOrderByCreatedAtDesc(Long sensorId);
 }

@@ -15,23 +15,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Clasificador de intenciones que aprende en linea (Naive Bayes multinomial con suavizado de Laplace).
- * Parte de frases semilla y mejora con cada ejemplo nuevo: cuando la persona corrige al asistente
- * o cuando el modelo de lenguaje local resuelve una pregunta (el clasificador aprende de el y luego
- * responde lo mismo aunque el modelo no este disponible). Los ejemplos se guardan en ia_ejemplo.
- */
 @Service
 public class ClasificadorIntenciones {
 
     private static final Logger log = LoggerFactory.getLogger(ClasificadorIntenciones.class);
 
-    /** Etiqueta visible de cada intencion (tambien se usa para preguntar "¿que quisiste decir?"). */
     public static final Map<String, String> ETIQUETAS = new LinkedHashMap<>();
 
     private static final Map<String, List<String>> SEMILLAS = new LinkedHashMap<>();
 
-    /** Suavizado de Laplace: menor que 1 porque las frases son cortas y el vocabulario crece al aprender. */
     static final double SUAVIZADO = 0.1;
 
     static {
@@ -91,7 +83,6 @@ public class ClasificadorIntenciones {
     public record Prediccion(String intencion, double confianza) { }
 
     private final JdbcTemplate jdbc;
-    // Conteos del modelo: por intencion, cuantas veces aparece cada rasgo
     private final Map<String, Map<String, Integer>> conteos = new HashMap<>();
     private final Map<String, Integer> totales = new HashMap<>();
     private final Set<String> vocabulario = new HashSet<>();
@@ -102,7 +93,6 @@ public class ClasificadorIntenciones {
         this.jdbc = jdbc;
     }
 
-    /** Las tres intenciones mas probables, de mayor a menor. */
     public synchronized List<Prediccion> clasificar(String texto) {
         cargar();
         List<String> rasgos = Texto.rasgos(texto).stream().filter(vocabulario::contains).toList();
@@ -110,7 +100,7 @@ public class ClasificadorIntenciones {
         Map<String, Double> logp = new HashMap<>();
         int v = vocabulario.size();
         for (String c : conteos.keySet()) {
-            double s = 0;   // a priori uniforme: no favorece a las intenciones con mas ejemplos
+            double s = 0;
             Map<String, Integer> cc = conteos.get(c);
             for (String r : rasgos) s += Math.log((cc.getOrDefault(r, 0) + SUAVIZADO) / (totales.get(c) + SUAVIZADO * v));
             logp.put(c, s);
@@ -124,7 +114,6 @@ public class ClasificadorIntenciones {
                 .toList();
     }
 
-    /** Aprende una frase con su intencion correcta y la guarda para los proximos arranques. */
     public synchronized void aprender(String texto, String intencion, String origen, String usuario) {
         if (!ETIQUETAS.containsKey(intencion) || texto == null || texto.isBlank()) return;
         cargar();
@@ -132,7 +121,6 @@ public class ClasificadorIntenciones {
         int n = jdbc.update("INSERT INTO ia_ejemplo (texto, intencion, origen, username) VALUES (?, ?, ?, ?) "
                 + "ON CONFLICT (texto, intencion) DO NOTHING", limpio, intencion, origen, usuario);
         if (n > 0) {
-            // Lo que ensena una persona pesa el doble que lo deducido por el modelo
             sumar(intencion, limpio, "USUARIO".equals(origen) ? 2 : 1);
             aprendidos++;
         }
@@ -169,7 +157,6 @@ public class ClasificadorIntenciones {
         totales.putIfAbsent(intencion, 0);
     }
 
-    /** Para mostrar opciones cuando el asistente no esta seguro. */
     public static List<String> intenciones() {
         return new ArrayList<>(ETIQUETAS.keySet());
     }

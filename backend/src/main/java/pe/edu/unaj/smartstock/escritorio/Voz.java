@@ -8,19 +8,10 @@ import java.util.Base64;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * Voz del asistente con el motor de voz de Windows (System.Speech): funciona sin internet.
- *  - hablar(): sintesis con una voz en espanol (p. ej. "Microsoft Helena").
- *  - escuchar(): reconocimiento en espanol (es-ES) con una gramatica de ordenes conocidas,
- *    que se reconocen mejor, y dictado libre como respaldo.
- * Cada operacion corre en un proceso de PowerShell; el texto viaja en Base64 (sin problemas de comillas).
- */
 final class Voz {
 
-    /** Senal que el script imprime cuando el microfono ya esta escuchando. */
     static final String ESCUCHANDO = "__ESCUCHANDO__";
 
-    /** Ordenes del asistente (AsistenteService las entiende). Se reconocen con mas precision que el dictado. */
     private static final List<String> FRASES = List.of(
             "qué errores hay", "qué problemas hay", "hay errores", "hay problemas", "diagnóstico", "cómo está el almacén",
             "cómo está la temperatura", "cómo está la humedad", "repara los problemas", "repara", "soluciona los problemas",
@@ -84,10 +75,6 @@ final class Voz {
         hablando = null;
     }
 
-    /**
-     * Escucha una frase en un hilo aparte. Llama a alEscuchar cuando el microfono esta listo
-     * y a alTerminar con el texto reconocido ("" si no se entendio nada) o a alFallar con el error.
-     */
     synchronized void escuchar(Runnable alEscuchar, Consumer<String> alTerminar, Consumer<String> alFallar) {
         callar();
         if (escuchando != null) escuchando.destroyForcibly();
@@ -110,7 +97,7 @@ final class Voz {
                 if (p.waitFor() != 0 && p == escuchando) {
                     alFallar.accept("No se pudo usar el micrófono. Revise que esté conectado y que Windows permita "
                             + "el acceso al micrófono (Configuración > Privacidad > Micrófono).");
-                } else if (p == escuchando) {   // si se reemplazo por otra escucha, se ignora
+                } else if (p == escuchando) {
                     alTerminar.accept(texto.toString());
                 }
             } catch (IOException | InterruptedException e) {
@@ -127,7 +114,6 @@ final class Voz {
     }
 
     private static Process iniciar(String script) throws IOException {
-        // -EncodedCommand espera el script en UTF-16LE + Base64
         String codificado = Base64.getEncoder().encodeToString(script.getBytes(StandardCharsets.UTF_16LE));
         return new ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
                 "-EncodedCommand", codificado)

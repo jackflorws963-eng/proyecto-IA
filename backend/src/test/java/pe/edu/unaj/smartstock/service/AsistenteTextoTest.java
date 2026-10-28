@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/** El asistente compara ordenes sin tildes, mayusculas ni signos (texto escrito o dictado por voz). */
 class AsistenteTextoTest {
 
     @Test

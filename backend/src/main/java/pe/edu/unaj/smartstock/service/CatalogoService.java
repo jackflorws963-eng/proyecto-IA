@@ -12,7 +12,6 @@ import pe.edu.unaj.smartstock.repository.UbicacionRepository;
 import java.math.BigDecimal;
 import java.util.List;
 
-/** CRUD de categorias y ubicaciones (con desactivacion logica, sin borrado). */
 @Service
 public class CatalogoService {
 
@@ -26,7 +25,6 @@ public class CatalogoService {
         this.auditoria = auditoria;
     }
 
-    // ---------- Categorias ----------
     @Transactional(readOnly = true)
     public List<CategoriaResponse> listarCategorias() {
         return categorias.findAllByOrderByNombreAsc().stream().map(CategoriaResponse::de).toList();
@@ -58,7 +56,6 @@ public class CatalogoService {
         return CategoriaResponse.de(c);
     }
 
-    // ---------- Ubicaciones ----------
     @Transactional(readOnly = true)
     public List<UbicacionResponse> listarUbicaciones() {
         return ubicaciones.findAllByOrderByNombreAsc().stream().map(UbicacionResponse::de).toList();
@@ -101,7 +98,6 @@ public class CatalogoService {
     }
 
     private void validarRangos(UbicacionRequest r) {
-        // El rango debe ser mayor que la histeresis a ambos lados; si no, una alerta ambiental nunca se cerraria.
         BigDecimal minimo = IotService.HISTERESIS.multiply(BigDecimal.valueOf(2));
         if (r.tempMax().subtract(r.tempMin()).compareTo(minimo) <= 0) {
             throw NegocioException.invalido("tempMax debe superar a tempMin en mas de " + minimo.toPlainString());

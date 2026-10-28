@@ -16,7 +16,6 @@ public class Dispositivo {
     @Column(nullable = false, length = 80)
     private String nombre;
 
-    /** Hash BCrypt de la clave del dispositivo. La clave en claro nunca se guarda. */
     @Column(name = "api_key_hash", nullable = false, length = 100)
     private String apiKeyHash;
 
@@ -33,12 +32,10 @@ public class Dispositivo {
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
-    /** Ventilador conectado al rele del ESP32 (ver VentiladorService). */
     @Enumerated(EnumType.STRING)
     @Column(name = "ventilador_modo", nullable = false, length = 10)
     private Enums.ModoVentilador ventiladorModo = Enums.ModoVentilador.AUTO;
 
-    /** Estado que el servidor ordena al ESP32. */
     @Column(name = "ventilador_encendido", nullable = false)
     private boolean ventiladorEncendido;
 

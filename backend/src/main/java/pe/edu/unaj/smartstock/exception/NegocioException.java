@@ -2,7 +2,6 @@ package pe.edu.unaj.smartstock.exception;
 
 import org.springframework.http.HttpStatus;
 
-/** Error de regla de negocio con su codigo HTTP. */
 public class NegocioException extends RuntimeException {
     private final HttpStatus status;
 

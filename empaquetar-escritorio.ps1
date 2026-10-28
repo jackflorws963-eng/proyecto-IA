@@ -1,16 +1,6 @@
-# SmartStock IoT - genera la aplicacion de escritorio para Windows.  Autor: Brayan (BR)
-#
-#   .\empaquetar-escritorio.ps1               -> dist\SmartStock IoT\           (programa listo, incluye Java)
-#                                                 dist\SmartStock-IoT-<ver>-portable.zip
-#                                                 dist\SmartStock-IoT-<ver>-instalador.exe  (si hay Inno Setup 6 o WiX 3)
-#   .\empaquetar-escritorio.ps1 -ConPruebas   -> ademas ejecuta las pruebas antes de empaquetar
-#
-# Requisitos: JDK 21 (trae jpackage). Maven NO hace falta: se usa el wrapper backend\mvnw.cmd.
 param([switch]$ConPruebas)
 $ErrorActionPreference = 'Stop'
 
-# Ejecuta un programa externo. Sus avisos en stderr (Java, Maven) no deben detener el script:
-# solo cuenta el codigo de salida.
 function Ejecutar([string]$programa, [string[]]$argumentos, [string]$mensajeError) {
     $anterior = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
@@ -25,12 +15,10 @@ $dist = Join-Path $raiz 'dist'
 $nombre = 'SmartStock IoT'
 $icono = Join-Path $raiz 'instalador\smartstock.ico'
 
-# Version: la del proyecto (primer <version> despues de </parent> en pom.xml)
 $pom = Get-Content (Join-Path $backend 'pom.xml') -Raw
 if ($pom -notmatch '</parent>[\s\S]*?<version>([^<]+)</version>') { throw 'No se pudo leer la version del pom.xml' }
 $version = $Matches[1]
 
-# jpackage viene con el JDK 21
 $jpackage = if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME 'bin\jpackage.exe' } else { (Get-Command jpackage -ErrorAction SilentlyContinue).Source }
 if (-not $jpackage -or -not (Test-Path $jpackage)) { throw 'No se encontro jpackage. Instale un JDK 21 y defina JAVA_HOME.' }
 
@@ -43,7 +31,6 @@ try {
     Ejecutar (Join-Path $backend 'mvnw.cmd') $objetivos 'Fallo la compilacion con Maven.'
 } finally { Pop-Location }
 
-# jpackage copia toda la carpeta de entrada: solo debe contener el .jar
 $entrada = Join-Path $backend 'target\escritorio'
 Remove-Item $entrada -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory $entrada | Out-Null

@@ -12,7 +12,6 @@ import pe.edu.unaj.smartstock.repository.UsuarioRepository;
 
 import java.util.List;
 
-/** Carga usuarios desde PostgreSQL para el login (contrasena verificada con BCrypt). */
 @Service
 public class UsuarioDetailsService implements UserDetailsService {
 

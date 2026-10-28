@@ -1,5 +1,3 @@
-# SmartStock IoT - integracion continua: compila y ejecuta las pruebas unitarias y de integracion
-# contra un PostgreSQL real en cada push y pull request.  Autor: Brayan (BR)
 name: CI
 
 on:

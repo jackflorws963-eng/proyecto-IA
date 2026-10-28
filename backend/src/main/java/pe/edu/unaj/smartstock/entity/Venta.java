@@ -7,7 +7,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Comprobante de venta. No se borra ni se edita: solo puede pasar de EMITIDA a ANULADA (trigger en BD). */
 @Entity
 @Table(name = "venta")
 public class Venta {
@@ -25,7 +24,6 @@ public class Venta {
     @Column(nullable = false)
     private Integer correlativo;
 
-    /** Ubicacion de la que sale la mercaderia. */
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "ubicacion_id", nullable = false)
     private Ubicacion ubicacion;
@@ -80,7 +78,6 @@ public class Venta {
     @OrderBy("id")
     private List<VentaDetalle> detalles = new ArrayList<>();
 
-    /** Numero del comprobante, p. ej. B001-00000042. */
     public String getNumero() { return serie + "-" + String.format("%08d", correlativo); }
 
     public void agregar(VentaDetalle d) {

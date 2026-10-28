@@ -8,7 +8,6 @@ import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Validacion de lecturas: rango fisico y fecha enviada por el ESP32. */
 class IotValidacionTest {
 
     @Test

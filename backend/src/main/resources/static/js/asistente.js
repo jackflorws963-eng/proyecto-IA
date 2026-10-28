@@ -1,13 +1,9 @@
 'use strict';
 
-// Pagina del asistente: conversacion con la IA local (js/ia.js), estado del motor, diagnostico en vivo
-// (cada 20 s, avisa en voz alta los problemas nuevos), prediccion de agotamiento y memoria aprendida.
-
 let chat = null;
 const anunciados = new Set();
 let primeraVez = true;
 
-// ---------- Estado de la IA ----------
 async function cargarEstado() {
   const cont = document.getElementById('estadoIa');
   try {
@@ -25,7 +21,6 @@ async function cargarEstado() {
   } catch (err) { cont.innerHTML = `<div class="estado error">${esc(err.message)}</div>`; }
 }
 
-// ---------- Prediccion ----------
 async function cargarPronostico() {
   const tb = document.getElementById('tbPronostico');
   try {
@@ -39,7 +34,6 @@ async function cargarPronostico() {
   } catch (err) { estadoTabla(tb, 6, err.message, true); }
 }
 
-// ---------- Memoria ----------
 async function cargarMemoria() {
   const cont = document.getElementById('memoria');
   try {
@@ -70,7 +64,6 @@ document.getElementById('formRecordar').addEventListener('submit', async (e) => 
   } catch (err) { aviso('aviso', 'error', err.message); }
 });
 
-// ---------- Diagnostico ----------
 async function cargarDiagnostico() {
   const cont = document.getElementById('problemas');
   let d;
@@ -92,7 +85,6 @@ async function cargarDiagnostico() {
           `<button class="sec mini" data-accion="${esc(a.codigo)}">${esc(a.descripcion)}</button>`).join(' ')}</div>` : ''}
       </div>`).join('');
 
-  // Avisa en voz alta los problemas nuevos de prioridad media o alta
   const nuevos = d.problemas.filter(p => !anunciados.has(p.id) && p.gravedad !== 'BAJA');
   d.problemas.forEach(p => anunciados.add(p.id));
   if (primeraVez) { primeraVez = false; return; }
@@ -102,7 +94,6 @@ async function cargarDiagnostico() {
   }
 }
 
-// Boton de una accion concreta del diagnostico: el clic es la confirmacion
 document.getElementById('problemas').addEventListener('click', async (e) => {
   const b = e.target.closest('button[data-accion]');
   if (!b) return;

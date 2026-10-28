@@ -3,7 +3,6 @@ package pe.edu.unaj.smartstock.entity;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 
-/** Diferencia estimado vs registrado que espera revision humana. */
 @Entity
 @Table(name = "discrepancia")
 public class Discrepancia {

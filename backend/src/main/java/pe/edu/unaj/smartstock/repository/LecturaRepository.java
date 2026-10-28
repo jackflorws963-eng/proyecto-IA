@@ -13,7 +13,6 @@ public interface LecturaRepository extends JpaRepository<Lectura, Long> {
 
     Optional<Lectura> findBySensorIdAndSeq(Long sensorId, Long seq);
 
-    /** Usa el indice unico (sensor_id, seq): consulta inmediata aunque haya millones de lecturas. */
     @Query("SELECT MAX(l.seq) FROM Lectura l WHERE l.sensor.id = :sensorId")
     Long maxSeq(@Param("sensorId") Long sensorId);
 

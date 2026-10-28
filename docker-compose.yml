@@ -1,13 +1,9 @@
-# SmartStock IoT - servidor + PostgreSQL.  Autor: Brayan (BR)
-#   1) copie .env.example como .env y cambie TODAS las claves
-#   2) docker compose up -d      ->  http://localhost:8080
 services:
   db:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD en .env}
-      # la aplicacion usa su propio usuario (no superusuario): lo crea database/docker-init.sh
       DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD en .env}
     volumes:
       - datos:/var/lib/postgresql/data

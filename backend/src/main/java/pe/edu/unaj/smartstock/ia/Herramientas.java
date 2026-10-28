@@ -23,18 +23,11 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-/**
- * Todo lo que el asistente de IA puede consultar y hacer en SmartStock. Cada herramienta llama a los mismos
- * servicios que usa la interfaz, con el usuario que conversa: se aplican las mismas reglas de negocio,
- * validaciones, auditoria y permisos por rol. Las que modifican datos se proponen y solo se ejecutan
- * cuando la persona confirma (ver AsistenteIa).
- */
 @Component
 public class Herramientas {
 
     static final ZoneId ZONA = ZoneId.of("America/Lima");
 
-    /** Pantallas del programa que el asistente puede abrir. */
     static final Map<String, String> PANTALLAS = new LinkedHashMap<>();
 
     static {
@@ -47,7 +40,6 @@ public class Herramientas {
         PANTALLAS.put("asistente", "/asistente.html");
     }
 
-    /** Usuario que conversa y efectos sobre la interfaz que la herramienta pide al navegador. */
     public static final class Contexto {
         final Authentication auth;
         String navegar;
@@ -65,7 +57,6 @@ public class Herramientas {
         }
     }
 
-    /** Resultado: texto para la persona (y la voz) y datos estructurados para el modelo de lenguaje. */
     public record Resultado(String texto, Object datos) {
         static Resultado de(String texto) { return new Resultado(texto, null); }
     }
@@ -126,7 +117,6 @@ public class Herramientas {
         return todas.values();
     }
 
-    /** Definiciones en el formato de "tools" de Ollama (solo las que el rol puede usar). */
     public List<Map<String, Object>> definiciones(boolean esAdmin) {
         return todas.values().stream().filter(h -> esAdmin || !h.soloAdmin())
                 .map(h -> Map.<String, Object>of("type", "function", "function", Map.of(
@@ -135,8 +125,6 @@ public class Herramientas {
                         "parameters", h.parametros())))
                 .toList();
     }
-
-    // =====================================================================================  CONSULTAS
 
     private void registrarConsultas() {
         consulta("resumen_general", "Resumen del estado del negocio: productos, stock bajo, alertas, dispositivos y ventas de hoy.",
@@ -295,8 +283,6 @@ public class Herramientas {
                 });
         todas.put(auditoriaH.nombre(), auditoriaH);
     }
-
-    // =====================================================================================  OPERACIONES
 
     private void registrarOperaciones() {
         operacion("registrar_movimiento", "Registra una ENTRADA, SALIDA, TRANSFERENCIA o AJUSTE (ajustes solo ADMIN) de stock.",
@@ -465,8 +451,6 @@ public class Herramientas {
                 });
     }
 
-    // =====================================================================================  INTERFAZ Y MEMORIA
-
     private void registrarInterfazYMemoria() {
         consulta("abrir_pantalla", "Abre una pantalla del programa.",
                 esquema(requerido(enumeracion("pantalla", "pantalla a abrir", true, PANTALLAS.keySet().toArray(String[]::new)))),
@@ -511,8 +495,6 @@ public class Herramientas {
                 });
     }
 
-    // =====================================================================================  REGISTRO
-
     private void consulta(String nombre, String descripcion, Map<String, Object> parametros,
                           BiFunction<Args, Contexto, Resultado> ejecutar) {
         todas.put(nombre, new Herramienta(nombre, descripcion, parametros, false, false, null, ejecutar));
@@ -522,8 +504,6 @@ public class Herramientas {
                            BiFunction<Args, Contexto, String> describir, BiFunction<Args, Contexto, Resultado> ejecutar) {
         todas.put(nombre, new Herramienta(nombre, descripcion, parametros, true, soloAdmin, describir, ejecutar));
     }
-
-    // =====================================================================================  ESQUEMAS JSON
 
     @SafeVarargs
     private static Map<String, Object> esquema(Map<String, Object>... propiedades) {
@@ -557,9 +537,6 @@ public class Herramientas {
         return r;
     }
 
-    // =====================================================================================  RESOLUCION DE NOMBRES
-
-    /** Producto por id, codigo exacto o nombre aproximado (tolera errores de dictado). */
     ProductoResponse producto(String referencia) {
         if (referencia == null || referencia.isBlank()) throw NegocioException.invalido("Indica el producto");
         String ref = referencia.trim();
@@ -585,7 +562,6 @@ public class Herramientas {
         return mejor;
     }
 
-    /** Producto mencionado dentro de una frase libre (para el motor sin modelo de lenguaje). */
     Optional<ProductoResponse> productoEnFrase(String frase) {
         ProductoResponse mejor = null;
         double puntaje = 0;
@@ -647,7 +623,6 @@ public class Herramientas {
         if (referencia == null || referencia.isBlank()) throw NegocioException.invalido("Indica la venta");
         String ref = referencia.trim().toUpperCase();
         if (ref.matches("\\d+")) return ventas.obtener(Long.valueOf(ref));
-        // "B001-00000007", "b001-7" o "B001 7" -> B001-00000007
         var m = java.util.regex.Pattern.compile("([A-Z]{1,2}\\d{2,3})\\s*-?\\s*0*(\\d{1,8})").matcher(ref);
         if (!m.find()) throw NegocioException.noEncontrado("Venta", referencia);
         String numero = m.group(1) + "-" + String.format("%08d", Integer.parseInt(m.group(2)));
@@ -673,8 +648,6 @@ public class Herramientas {
         return alertas.activasRecientes().stream().filter(x -> x.estado() == EstadoAlerta.ABIERTA).map(AlertaResponse::id).toList();
     }
 
-    // =====================================================================================  PETICIONES VALIDADAS
-
     private MovimientoRequest movimiento(Args a) {
         TipoMovimiento tipo = TipoMovimiento.valueOf(a.requerido("tipo").toUpperCase());
         ProductoResponse p = producto(a.requerido("producto"));
@@ -696,7 +669,6 @@ public class Herramientas {
         if (items.isEmpty()) throw NegocioException.invalido("Indica qué productos se venden");
         TipoComprobante tipo = a.tiene("comprobante") ? TipoComprobante.valueOf(a.texto("comprobante").toUpperCase()) : TipoComprobante.BOLETA;
         MetodoPago pago = a.tiene("metodo_pago") ? MetodoPago.valueOf(a.texto("metodo_pago").toUpperCase()) : MetodoPago.EFECTIVO;
-        // El modelo envia 0 cuando no sabe cuanto pago el cliente: equivale a "monto exacto"
         BigDecimal recibido = a.decimal("monto_recibido");
         if (recibido != null && recibido.signum() <= 0) recibido = null;
         return validar(new VentaRequest(tipo, ubicacion(a.texto("ubicacion")).id(), a.texto("cliente_documento"),
@@ -721,7 +693,6 @@ public class Herramientas {
                 a.tiene("stock_minimo") ? a.entero("stock_minimo", 0) : p.stockMinimo()));
     }
 
-    /** Las mismas validaciones que la API REST aplica con @Valid. */
     private <T> T validar(T peticion) {
         Set<ConstraintViolation<T>> errores = validador.validate(peticion);
         if (!errores.isEmpty()) {
@@ -730,8 +701,6 @@ public class Herramientas {
         }
         return peticion;
     }
-
-    // =====================================================================================  UTILIDADES
 
     static OffsetDateTime desdeDias(int dias) {
         return LocalDate.now(ZONA).minusDays(Math.max(dias, 0)).atStartOfDay(ZONA).toOffsetDateTime();
@@ -745,7 +714,6 @@ public class Herramientas {
         return "S/ " + (v == null ? "0.00" : v.setScale(2, RoundingMode.HALF_UP).toPlainString());
     }
 
-    /** Argumentos de una herramienta (llegan como JSON del modelo o armados por el motor local). */
     public static final class Args {
         private final Map<String, Object> m;
 

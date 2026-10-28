@@ -5,7 +5,6 @@ import org.hibernate.annotations.Immutable;
 
 import java.math.BigDecimal;
 
-/** Linea de una venta. Inmutable (trigger en BD); su salida de stock es el movimiento asociado. */
 @Entity
 @Immutable
 @Table(name = "venta_detalle")
@@ -25,7 +24,6 @@ public class VentaDetalle {
     @Column(nullable = false)
     private Integer cantidad;
 
-    /** Precio del producto al momento de la venta (IGV incluido). */
     @Column(name = "precio_unitario", nullable = false, precision = 12, scale = 2)
     private BigDecimal precioUnitario;
 

@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/** Reglas de MovimientoService con repositorios simulados (Mockito). */
 @ExtendWith(MockitoExtension.class)
 class MovimientoServiceTest {
 

@@ -13,7 +13,6 @@ class IntentosFallidosTest {
         assertFalse(intentos.bloqueado("login:admin@1.2.3.4"));
         intentos.fallo("login:admin@1.2.3.4");
         assertTrue(intentos.bloqueado("login:admin@1.2.3.4"));
-        // otra IP no queda afectada (nadie puede bloquear la cuenta ajena desde su maquina)
         assertFalse(intentos.bloqueado("login:admin@5.6.7.8"));
         intentos.exito("login:admin@1.2.3.4");
         assertFalse(intentos.bloqueado("login:admin@1.2.3.4"));

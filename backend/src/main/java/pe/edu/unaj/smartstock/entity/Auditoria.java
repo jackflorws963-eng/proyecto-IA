@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.Immutable;
 import java.time.OffsetDateTime;
 
-/** Registro de auditoria. Inmutable (trigger en BD). */
 @Entity
 @Immutable
 @Table(name = "auditoria")

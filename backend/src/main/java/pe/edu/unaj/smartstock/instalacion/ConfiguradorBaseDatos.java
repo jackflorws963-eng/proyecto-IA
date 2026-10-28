@@ -15,19 +15,6 @@ import java.sql.Statement;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
-/**
- * Primer arranque: prepara PostgreSQL para SmartStock y guarda la configuracion del equipo.
- * <ol>
- *   <li>Con el superusuario (normalmente "postgres") crea o actualiza el usuario propio "smartstock"
- *       con una contrasena aleatoria. La aplicacion nunca usa el superusuario, porque este puede
- *       desactivar los triggers que protegen el historial.</li>
- *   <li>Crea la base de datos con duenio "smartstock" o, si ya existe, le transfiere la propiedad
- *       de la base, del esquema public y de sus objetos (instalaciones anteriores).</li>
- *   <li>Escribe application.properties con la conexion, las contrasenas iniciales y una clave
- *       aleatoria para el ESP32-01. Las tablas las crea Flyway al iniciar el servidor.</li>
- * </ol>
- * Independiente de JavaFX para poder probarlo y reutilizarlo.
- */
 public class ConfiguradorBaseDatos {
 
     public static final String USUARIO_APP = "smartstock";
@@ -36,7 +23,6 @@ public class ConfiguradorBaseDatos {
     private static final String ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
     private static final SecureRandom AZAR = new SecureRandom();
 
-    /** Pasa la propiedad de todo lo que haya en el esquema public al usuario de la aplicacion. */
     private static final String TRANSFERIR_OBJETOS = """
             DO $$
             DECLARE r record;
@@ -59,11 +45,9 @@ public class ConfiguradorBaseDatos {
               END LOOP;
             END $$""";
 
-    /** Datos que ingresa la persona que instala. */
     public record Datos(String host, int puerto, String superusuario, String claveSuperusuario,
                         String baseDatos, String claveAdmin, String claveOperador, int puertoWeb) {
 
-        /** Devuelve el primer problema encontrado, o null si los datos son validos. */
         public String validar() {
             if (host == null || host.isBlank()) return "Indique el servidor de PostgreSQL";
             if (puerto < 1 || puerto > 65535) return "El puerto de PostgreSQL no es valido";
@@ -80,7 +64,6 @@ public class ConfiguradorBaseDatos {
         }
     }
 
-    /** Lo que la persona debe conocer al terminar. */
     public record Resultado(Path archivo, String claveDispositivo, boolean baseExistente) { }
 
     private final Path archivo;
@@ -89,7 +72,6 @@ public class ConfiguradorBaseDatos {
         this.archivo = archivo;
     }
 
-    /** true si todavia no hay configuracion de base de datos (ni en el archivo ni en variables de entorno). */
     public static boolean faltaConfiguracion(Path archivo) {
         if (System.getenv("DB_PASSWORD") != null) return false;
         if (!Files.isRegularFile(archivo)) return true;
@@ -106,7 +88,6 @@ public class ConfiguradorBaseDatos {
 
         try (Connection c = DriverManager.getConnection(url(d, "postgres"), d.superusuario(), d.claveSuperusuario());
              Statement s = c.createStatement()) {
-            // Las claves aleatorias solo usan letras y numeros: se pueden escribir como literal SQL
             if (existe(c, "SELECT 1 FROM pg_roles WHERE rolname = ?", USUARIO_APP)) {
                 s.execute("ALTER ROLE " + USUARIO_APP + " WITH LOGIN NOSUPERUSER PASSWORD '" + claveBd + "'");
             } else {
@@ -121,14 +102,12 @@ public class ConfiguradorBaseDatos {
             }
         }
 
-        // Base creada por una version anterior (con postgres): los objetos pasan al usuario de la aplicacion
         try (Connection c = DriverManager.getConnection(url(d, d.baseDatos()), d.superusuario(), d.claveSuperusuario());
              Statement s = c.createStatement()) {
             s.execute("ALTER SCHEMA public OWNER TO " + USUARIO_APP);
             if (baseExistente) s.execute(TRANSFERIR_OBJETOS.replace("{rol}", USUARIO_APP));
         }
 
-        // Comprueba que la aplicacion podra conectarse con su propio usuario
         DriverManager.getConnection(url(d, d.baseDatos()), USUARIO_APP, claveBd).close();
 
         guardar(d, claveBd, claveDispositivo);
@@ -155,7 +134,6 @@ public class ConfiguradorBaseDatos {
         try (var r = Files.newBufferedReader(archivo, StandardCharsets.UTF_8)) {
             p.load(r);
         } catch (IOException e) {
-            // archivo ilegible: se trata como vacio y el asistente lo vuelve a escribir
         }
         return p;
     }

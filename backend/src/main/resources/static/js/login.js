@@ -1,6 +1,5 @@
 'use strict';
 
-// Script del login en archivo propio: la politica CSP del servidor no permite scripts en linea.
 document.getElementById('formLogin').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('btn');

@@ -3,7 +3,6 @@ package pe.edu.unaj.smartstock.entity;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 
-/** Existencias por producto y ubicacion. Solo MovimientoService la modifica. */
 @Entity
 @Table(name = "inventario")
 public class Inventario {

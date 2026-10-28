@@ -8,15 +8,9 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-/**
- * Objetos de transferencia (entrada y salida de la API).
- * Las entidades JPA nunca se exponen directamente: asi no se filtran
- * campos internos (por ejemplo hashes) ni se generan ciclos JSON.
- */
 public final class Dtos {
     private Dtos() { }
 
-    // ======================= CATEGORIAS =======================
     public record CategoriaRequest(
             @NotBlank @Size(max = 80) String nombre,
             @Size(max = 255) String descripcion,
@@ -28,7 +22,6 @@ public final class Dtos {
         }
     }
 
-    // ======================= UBICACIONES =======================
     public record UbicacionRequest(
             @NotBlank @Size(max = 80) String nombre,
             @Size(max = 255) String descripcion,
@@ -47,7 +40,6 @@ public final class Dtos {
         }
     }
 
-    // ======================= PRODUCTOS =======================
     public record ProductoRequest(
             @NotBlank @Size(max = 30) @Pattern(regexp = "^[A-Za-z0-9_-]+$", message = "solo letras, numeros, - y _") String codigo,
             @NotBlank @Size(max = 120) String nombre,
@@ -71,7 +63,6 @@ public final class Dtos {
 
     public record PaginaResponse<T>(List<T> contenido, int pagina, int tamano, long totalElementos, int totalPaginas) { }
 
-    // ======================= INVENTARIO Y MOVIMIENTOS =======================
     public record InventarioResponse(Long id, Long productoId, String productoCodigo, String productoNombre,
                                      Long ubicacionId, String ubicacion, Integer cantidad,
                                      Integer stockMinimo, OffsetDateTime actualizado) {
@@ -103,7 +94,6 @@ public final class Dtos {
         }
     }
 
-    // ======================= DISPOSITIVOS Y SENSORES =======================
     public record DispositivoRequest(
             @NotBlank @Size(max = 40) @Pattern(regexp = "^[A-Za-z0-9_-]+$") String codigo,
             @NotBlank @Size(max = 80) String nombre,
@@ -119,7 +109,6 @@ public final class Dtos {
         }
     }
 
-    /** Se devuelve UNA sola vez al crear o regenerar la clave del dispositivo. */
     public record DispositivoCredencialResponse(DispositivoResponse dispositivo, String apiKey, String aviso) { }
 
     public record SensorRequest(
@@ -136,30 +125,19 @@ public final class Dtos {
         }
     }
 
-    // ======================= LECTURAS IoT =======================
-    /** Una medicion enviada por el ESP32. */
     public record LecturaItem(
             @NotNull Enums.TipoSensor tipo,
             @NotNull Double valor,
             @NotNull @PositiveOrZero Long seq,
-            /** Segundos epoch UTC (si el ESP32 sincronizo NTP). Opcional. */
             Long ts) { }
 
-    /** Lote de mediciones: permite enviar las pendientes acumuladas sin conexion. */
     public record LoteLecturasRequest(
             @NotNull @Size(min = 1, max = 100) List<@Valid LecturaItem> lecturas) { }
 
-    /**
-     * resultado: GUARDADA, DUPLICADA (ya estaba: el ESP32 la borra), RECHAZADA (reenviarla no sirve),
-     * REINTENTAR (conflicto temporal: reenviar con el mismo seq) o
-     * SEQ_REUTILIZADA (el contador del ESP32 se reinicio: reenviar con un seq nuevo).
-     */
     public record ResultadoItem(Long seq, Enums.TipoSensor tipo, String resultado, String detalle) { }
 
-    /** seqMaximo: mayor seq guardado para el dispositivo; el ESP32 continua desde ahi si su contador es menor. */
     public record LoteLecturasResponse(int recibidas, int guardadas, int duplicadas, int rechazadas, int reenviar,
                                        Long seqMaximo, List<ResultadoItem> resultados,
-                                       /* estado que el ESP32 debe aplicar al rele del ventilador */
                                        boolean ventilador) { }
 
     public record LecturaResponse(Long id, Long sensorId, Enums.TipoSensor tipo, String dispositivo,
@@ -174,7 +152,6 @@ public final class Dtos {
 
     public record PuntoSerie(OffsetDateTime t, BigDecimal v) { }
 
-    // ======================= CALIBRACION Y ESTIMACION =======================
     public record CalibracionRequest(
             @NotNull Long sensorId,
             @NotNull @Digits(integer = 8, fraction = 6) BigDecimal factor,
@@ -212,7 +189,6 @@ public final class Dtos {
 
     public record RevisionRequest(@NotBlank @Size(max = 255) String comentario) { }
 
-    // ======================= ALERTAS =======================
     public record AlertaResponse(Long id, Enums.TipoAlerta tipo, Enums.PrioridadAlerta prioridad,
                                  Enums.EstadoAlerta estado, String mensaje, Integer ocurrencias,
                                  OffsetDateTime primeraVez, OffsetDateTime ultimaVez,
@@ -224,7 +200,6 @@ public final class Dtos {
         }
     }
 
-    // ======================= DASHBOARD Y AUTH =======================
     public record ResumenDashboard(long productosActivos, long productosBajoMinimo, long alertasActivas,
                                    long discrepanciasPendientes, long dispositivosEnLinea, long dispositivosTotal,
                                    long lecturasUltimaHora) { }
@@ -234,10 +209,8 @@ public final class Dtos {
 
     public record UsuarioActual(String username, String nombreCompleto, String rol) { }
 
-    // ======================= VENTAS =======================
     public record VentaItemRequest(@NotNull Long productoId, @NotNull @Positive @Max(100_000) Integer cantidad) { }
 
-    /** El precio NO viene del navegador: se toma del producto al momento de la venta. */
     public record VentaRequest(
             @NotNull Enums.TipoComprobante tipoComprobante,
             @NotNull Long ubicacionId,
@@ -280,11 +253,8 @@ public final class Dtos {
     public record ResumenVentas(long ventasHoy, BigDecimal totalHoy, BigDecimal ticketPromedioHoy,
                                 long ventasMes, BigDecimal totalMes, List<ProductoVendido> masVendidosMes) { }
 
-    // ======================= ASISTENTE =======================
-    /** Accion que el asistente puede ejecutar. Codigos: RECONOCER:{alertaId}, VENTILADOR:{dispositivoId}:{modo}. */
     public record AccionAsistente(String codigo, String descripcion) { }
 
-    /** id estable (p. ej. "alerta:7") para que el frontend sepa que problemas ya anuncio. */
     public record Problema(String id, String tipo, Enums.PrioridadAlerta gravedad, String titulo,
                            String sugerencia, List<AccionAsistente> acciones) { }
 
@@ -292,7 +262,6 @@ public final class Dtos {
 
     public record MensajeAsistenteRequest(@NotBlank @Size(max = 500) String texto) { }
 
-    /** porConfirmar: acciones propuestas que el usuario debe aceptar antes de ejecutarlas. */
     public record RespuestaAsistente(String texto, List<Problema> problemas, List<AccionAsistente> porConfirmar) { }
 
     public record EjecutarAccionesRequest(@NotEmpty @Size(max = 50) List<@NotBlank @Size(max = 60) String> acciones) { }

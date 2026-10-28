@@ -19,7 +19,6 @@ import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.List;
 
-/** Registro de dispositivos ESP32, sensores, credenciales y deteccion de desconexion. */
 @Service
 public class DispositivoService {
 
@@ -94,7 +93,6 @@ public class DispositivoService {
         return DispositivoResponse.de(d, enLinea(d));
     }
 
-    // ---------- Sensores ----------
     @Transactional(readOnly = true)
     public List<SensorResponse> listarSensores() {
         return sensores.findAllByOrderByIdAsc().stream().map(SensorResponse::de).toList();
@@ -139,8 +137,6 @@ public class DispositivoService {
         return p;
     }
 
-    // ---------- Monitor de conexion ----------
-    /** Cada 30 s revisa que dispositivos activos dejaron de comunicarse. */
     @Scheduled(fixedDelayString = "${smartstock.iot.monitor-ms:30000}", initialDelay = 20000)
     @Transactional
     public void revisarConexion() {

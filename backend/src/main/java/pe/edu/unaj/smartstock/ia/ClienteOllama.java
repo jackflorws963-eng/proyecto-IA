@@ -18,11 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Cliente del modelo de lenguaje local (Ollama, https://ollama.com). Ollama ejecuta el modelo en esta
- * PC (CPU o GPU): una vez descargado el modelo no se necesita internet.
- * Para garantizarlo, solo se aceptan direcciones de este mismo equipo (localhost); cualquier otra se ignora.
- */
 @Component
 public class ClienteOllama {
 
@@ -72,7 +67,6 @@ public class ClienteOllama {
         return motivo;
     }
 
-    /** true si Ollama responde y tiene el modelo descargado (se revisa como mucho cada 20 s). */
     public boolean disponible() {
         if (!habilitada) {
             motivo = "IA local desactivada en la configuracion";
@@ -102,10 +96,6 @@ public class ClienteOllama {
         return disponible;
     }
 
-    /**
-     * Un turno de conversacion con herramientas. Devuelve el mensaje del modelo:
-     * {"role":"assistant","content":"...","tool_calls":[{"function":{"name":..,"arguments":{..}}}]}.
-     */
     public JsonNode chat(List<Map<String, Object>> mensajes, List<Map<String, Object>> herramientas) throws IOException {
         Map<String, Object> cuerpo = new LinkedHashMap<>();
         cuerpo.put("model", modelo);
@@ -126,7 +116,7 @@ public class ClienteOllama {
             Thread.currentThread().interrupt();
             throw new IOException("Interrumpido", e);
         } catch (IOException e) {
-            revisadoEn = 0;   // fuerza a revisar el estado en la proxima pregunta
+            revisadoEn = 0;
             throw e;
         }
     }

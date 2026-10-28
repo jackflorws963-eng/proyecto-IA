@@ -16,13 +16,6 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * Pruebas de integracion contra PostgreSQL REAL (base de datos de pruebas vacia).
- * Se ejecutan solo si existe la variable RUN_IT=true:
- *   createdb smartstock_test
- *   RUN_IT=true DB_URL=jdbc:postgresql://localhost:5432/smartstock_test mvn test
- * Fijan sus propias credenciales de prueba (no dependen de las variables de entorno).
- */
 @SpringBootTest(properties = {
         "smartstock.seguridad.permitir-claves-desarrollo=true",
         "smartstock.seguridad.admin-password=Admin123!",
@@ -49,7 +42,6 @@ class IntegracionApiTest {
            .andExpect(status().isOk());
         mvc.perform(post("/api/auth/login").with(csrf()).param("username", "admin").param("password", "mala"))
            .andExpect(status().isUnauthorized());
-        // sin token CSRF el login se rechaza
         mvc.perform(post("/api/auth/login").param("username", "admin").param("password", "Admin123!"))
            .andExpect(status().isForbidden());
     }
@@ -71,11 +63,9 @@ class IntegracionApiTest {
         mvc.perform(get("/api/productos").param("q", "tuercas"))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.contenido[0].codigo").value("T100"));
-        // codigo duplicado -> 409
         mvc.perform(post("/api/productos").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
                 {"codigo":"t100","nombre":"Otro","categoriaId":1,"unidad":"u","precio":1,"stockMinimo":0}"""))
            .andExpect(status().isConflict());
-        // validacion backend: precio negativo -> 400
         mvc.perform(post("/api/productos").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
                 {"codigo":"T101","nombre":"Mal","categoriaId":1,"unidad":"u","precio":-1,"stockMinimo":0}"""))
            .andExpect(status().isBadRequest());
@@ -118,13 +108,11 @@ class IntegracionApiTest {
            .andExpect(jsonPath("$.guardadas").value(3))
            .andExpect(jsonPath("$.seqMaximo").value(1))
            .andExpect(jsonPath("$.resultados[1].detalle").value("FUERA_RANGO"));
-        // reenvio del mismo lote (reintento tras perdida de Wi-Fi) -> todo DUPLICADA
         mvc.perform(post("/api/iot/lecturas").contentType(MediaType.APPLICATION_JSON)
                 .header("X-Device-Code", "ESP32-01").header("X-Device-Key", DEV_KEY).content(lote))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.guardadas").value(0))
            .andExpect(jsonPath("$.duplicadas").value(3));
-        // mismo seq con OTRO valor (contador del ESP32 reiniciado) -> no se descarta: se pide reenviar
         mvc.perform(post("/api/iot/lecturas").contentType(MediaType.APPLICATION_JSON)
                 .header("X-Device-Code", "ESP32-01").header("X-Device-Key", DEV_KEY)
                 .content("{\"lecturas\":[{\"tipo\":\"TEMPERATURA\",\"valor\":30.25,\"seq\":1}]}"))
@@ -135,10 +123,7 @@ class IntegracionApiTest {
 
     @Test @Order(8) @WithMockUser(username = "admin", roles = "ADMIN")
     void pesoQueNoCoincideGeneraDiscrepanciaYAlerta() throws Exception {
-        // stock registrado = 20; peso 1000 g / 50 g = 20 -> sin discrepancia
         mvc.perform(get("/api/discrepancias")).andExpect(jsonPath("$.length()").value(0));
-        // 600 g -> 12 unidades estimadas vs 20 registradas (40 %).
-        // Una o dos lecturas no bastan: hacen falta 3 seguidas sobre el umbral.
         for (int seq = 2; seq <= 4; seq++) {
             mvc.perform(post("/api/iot/lecturas").contentType(MediaType.APPLICATION_JSON)
                     .header("X-Device-Code", "ESP32-01").header("X-Device-Key", DEV_KEY)
@@ -149,14 +134,12 @@ class IntegracionApiTest {
         mvc.perform(get("/api/discrepancias"))
            .andExpect(jsonPath("$[0].estimacion.cantidadEstimada").value(12.0))
            .andExpect(jsonPath("$[0].estimacion.cantidadRegistrada").value(20));
-        // El stock NO cambia hasta que un humano apruebe
         mvc.perform(get("/api/inventario").param("productoId", "1").param("ubicacionId", "1"))
            .andExpect(jsonPath("$[0].cantidad").value(20));
     }
 
     @Test @Order(9) @WithMockUser(username = "admin", roles = "ADMIN")
     void aprobarDiscrepanciaAjustaStockConLaEstimacionMasReciente() throws Exception {
-        // Despues de la deteccion la balanza marca 500 g (10 unidades): se ajusta a 10, no a 12
         mvc.perform(post("/api/iot/lecturas").contentType(MediaType.APPLICATION_JSON)
                 .header("X-Device-Code", "ESP32-01").header("X-Device-Key", DEV_KEY)
                 .content("{\"lecturas\":[{\"tipo\":\"PESO\",\"valor\":500,\"seq\":5}]}"))
@@ -173,7 +156,6 @@ class IntegracionApiTest {
 
     @Test @Order(10) @WithMockUser(username = "operador", roles = "OPERADOR")
     void ventaDescuentaStockYCalculaIgvYVuelto() throws Exception {
-        // 3 x S/ 3.50 = S/ 10.50 con IGV incluido -> base 8.90 + IGV 1.60
         mvc.perform(post("/api/ventas").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
                 {"tipoComprobante":"BOLETA","ubicacionId":1,"metodoPago":"EFECTIVO","montoRecibido":20,
                  "items":[{"productoId":1,"cantidad":2},{"productoId":1,"cantidad":1}]}"""))
@@ -186,15 +168,12 @@ class IntegracionApiTest {
            .andExpect(jsonPath("$.detalles.length()").value(1));
         mvc.perform(get("/api/inventario").param("productoId", "1").param("ubicacionId", "1"))
            .andExpect(jsonPath("$[0].cantidad").value(7));
-        // sin stock suficiente -> 409 y no se emite comprobante
         mvc.perform(post("/api/ventas").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
                 {"tipoComprobante":"BOLETA","ubicacionId":1,"metodoPago":"YAPE","items":[{"productoId":1,"cantidad":99}]}"""))
            .andExpect(status().isConflict());
-        // factura sin RUC -> 422
         mvc.perform(post("/api/ventas").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
                 {"tipoComprobante":"FACTURA","ubicacionId":1,"metodoPago":"TARJETA","items":[{"productoId":1,"cantidad":1}]}"""))
            .andExpect(status().isUnprocessableEntity());
-        // el operador no puede anular
         mvc.perform(post("/api/ventas/1/anular").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"motivo\":\"error\"}"))
            .andExpect(status().isForbidden());
@@ -208,7 +187,6 @@ class IntegracionApiTest {
            .andExpect(jsonPath("$.estado").value("ANULADA"));
         mvc.perform(get("/api/inventario").param("productoId", "1").param("ubicacionId", "1"))
            .andExpect(jsonPath("$[0].cantidad").value(10));
-        // una venta anulada no se anula dos veces
         mvc.perform(post("/api/ventas/1/anular").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"motivo\":\"otra vez\"}"))
            .andExpect(status().isConflict());
@@ -234,7 +212,6 @@ class IntegracionApiTest {
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.porConfirmar.length()").value(1))
            .andReturn().getResponse().getContentAsString();
-        // propuesto pero no ejecutado: sin existencias de P002 todavia
         mvc.perform(get("/api/inventario").param("productoId", "2").param("ubicacionId", "1"))
            .andExpect(jsonPath("$.length()").value(0));
         String id = com.jayway.jsonpath.JsonPath.read(r, "$.porConfirmar[0].id");
@@ -243,7 +220,6 @@ class IntegracionApiTest {
            .andExpect(jsonPath("$.texto").value(org.hamcrest.Matchers.containsString("Registré")));
         mvc.perform(get("/api/inventario").param("productoId", "2").param("ubicacionId", "1"))
            .andExpect(jsonPath("$[0].cantidad").value(5));
-        // una propuesta confirmada no se ejecuta dos veces
         mvc.perform(post("/api/ia/confirmar/" + id).with(csrf()))
            .andExpect(jsonPath("$.texto").value(org.hamcrest.Matchers.containsString("no está vigente")));
     }
@@ -254,16 +230,13 @@ class IntegracionApiTest {
                 .content("{\"texto\":\"recuerda que el proveedor del arroz es Molinos del Sur\"}"))
            .andExpect(jsonPath("$.texto").value(org.hamcrest.Matchers.containsString("Molinos del Sur")));
         mvc.perform(get("/api/ia/memoria")).andExpect(jsonPath("$[0].texto").value("el proveedor del arroz es Molinos del Sur"));
-        // lo usa al responder una pregunta que no sabe clasificar
         mvc.perform(post("/api/ia/mensaje").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"texto\":\"quien es el proveedor del arroz\"}"))
            .andExpect(jsonPath("$.texto").value(org.hamcrest.Matchers.containsString("Molinos del Sur")));
-        // ensenar una frase nueva con su intencion
         mvc.perform(post("/api/ia/aprender").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"texto\":\"como anda la caja chica\",\"intencion\":\"resumen_ventas\"}"))
            .andExpect(jsonPath("$.texto").value(org.hamcrest.Matchers.containsString("Aprendido")));
         mvc.perform(get("/api/ia/estado")).andExpect(jsonPath("$.frasesAprendidas").value(1));
-        // el pronostico aprende de las salidas reales (la venta de P001)
         mvc.perform(get("/api/ia/pronostico"))
            .andExpect(jsonPath("$[?(@.codigo == 'P001')].diasConDatos").value(org.hamcrest.Matchers.hasItem(1)));
     }

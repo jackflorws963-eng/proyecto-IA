@@ -11,10 +11,6 @@ import pe.edu.unaj.smartstock.repository.AuditoriaRepository;
 
 import java.util.List;
 
-/**
- * Registra acciones importantes. Se ejecuta dentro de la misma transaccion
- * que la operacion: si la operacion falla, tampoco queda registro (y viceversa).
- */
 @Service
 public class AuditoriaService {
 

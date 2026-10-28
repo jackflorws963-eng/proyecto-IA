@@ -12,7 +12,6 @@ import java.util.Optional;
 
 public interface SerieComprobanteRepository extends JpaRepository<SerieComprobante, Enums.TipoComprobante> {
 
-    /** SELECT ... FOR UPDATE: dos ventas simultaneas nunca obtienen el mismo correlativo. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM SerieComprobante s WHERE s.tipo = :tipo")
     Optional<SerieComprobante> bloquear(@Param("tipo") Enums.TipoComprobante tipo);

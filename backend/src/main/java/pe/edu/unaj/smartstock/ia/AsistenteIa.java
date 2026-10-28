@@ -27,18 +27,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * Asistente de inteligencia artificial de SmartStock. Funciona sin internet con dos motores:
- * <ol>
- *   <li><b>Modelo de lenguaje local</b> (Ollama en esta PC): entiende lenguaje libre y usa las herramientas
- *       del programa (consultas, operaciones, pantallas, memoria).</li>
- *   <li><b>Motor propio</b> (siempre disponible): clasificador de intenciones que aprende en linea y extrae
- *       productos, cantidades y ubicaciones de la frase.</li>
- * </ol>
- * Aprende en la marcha: guarda lo que le ensenan (memoria), aprende frases nuevas cuando la persona lo corrige
- * y cada vez que el modelo local resuelve una pregunta (el motor propio aprende de el), y pronostica la demanda
- * con las ventas reales. Todo cambio de datos se propone y solo se ejecuta con la confirmacion de la persona.
- */
 @Service
 public class AsistenteIa {
 
@@ -49,7 +37,6 @@ public class AsistenteIa {
     static final int MAX_CONTEXTO = 12;
     static final double CONFIANZA_MINIMA = 0.45;
     static final double VENTAJA_MINIMA = 2.5;
-    /** Para proponer algo que modifica datos el motor propio exige mas certeza. */
     static final double CONFIANZA_OPERACION = 0.8;
     static final Duration VIGENCIA_PROPUESTA = Duration.ofMinutes(15);
     private static final String ACCIONES_DIAGNOSTICO = "_acciones_diagnostico";
@@ -63,7 +50,6 @@ public class AsistenteIa {
     private static final Pattern RECIBIDO = Pattern.compile(
             "\\b(me dieron|me dio|pago con|paga con|pagan con|recibi|recibo|billete de)( s)?\\s+(\\d+(?:[.,]\\d{1,2})?)");
 
-    /** Frase que entiende el diagnostico por reglas para cada intencion que este resuelve. */
     private static final Map<String, String> FRASE_DIAGNOSTICO = Map.of(
             "diagnostico", "que errores hay", "reparar", "repara los problemas", "reconocer_alertas", "marca como vistas",
             "consultar_ambiente", "como esta la temperatura", "estado_dispositivos", "estado de los dispositivos",
@@ -73,7 +59,6 @@ public class AsistenteIa {
 
     public record Opcion(String intencion, String etiqueta) { }
 
-    /** motor: MODELO (lenguaje local) o PROPIO (clasificador). opciones: "¿que quisiste decir?" para aprender. */
     public record Respuesta(String texto, String motor, List<Accion> porConfirmar, String navegar, String descargar,
                             boolean imprimir, List<Opcion> opciones) { }
 
@@ -106,8 +91,6 @@ public class AsistenteIa {
         this.json = json;
     }
 
-    // =====================================================================================  API
-
     public Respuesta mensaje(String texto, Authentication auth) {
         String limpio = texto == null ? "" : texto.trim();
         anotar(auth, "usuario", limpio);
@@ -123,7 +106,6 @@ public class AsistenteIa {
         } else if (t.isBlank()) {
             r = simple("No escuché nada. ¿Puedes repetirlo?", motorActual());
         } else if (RECORDAR.matcher(limpio).matches()) {
-            // Ensenar es determinista: se guarda siempre, sin depender de que el modelo llame a la herramienta
             r = conMotorPropio(limpio, auth);
             recordarTurno(auth.getName(), limpio, r.texto());
         } else if (modelo.disponible()) {
@@ -158,7 +140,6 @@ public class AsistenteIa {
         return r;
     }
 
-    /** La persona corrige al asistente: aprende la frase y la resuelve con la intencion correcta. */
     public Respuesta aprender(String texto, String intencion, Authentication auth) {
         if (!ClasificadorIntenciones.ETIQUETAS.containsKey(intencion)) throw NegocioException.invalido("Intención desconocida");
         clasificador.aprender(texto, intencion, "USUARIO", auth.getName());
@@ -193,11 +174,8 @@ public class AsistenteIa {
                 clasificador.aprendidos(), memoria.cantidad(), herramientas.todas().size());
     }
 
-    // =====================================================================================  MODELO LOCAL
-
     private Respuesta conModelo(String texto, Authentication auth) throws IOException {
         Contexto ctx = new Contexto(auth);
-        // El motor propio analiza cada parte de la pregunta y le sugiere herramientas al modelo
         Map<String, String> pistas = pistasPorPartes(texto);
         List<Map<String, Object>> mensajes = new ArrayList<>();
         mensajes.add(Map.of("role", "system", "content", instrucciones(texto, ctx, pistas.keySet())));
@@ -216,7 +194,6 @@ public class AsistenteIa {
             JsonNode llamadas = m.path("tool_calls");
             if (!llamadas.isArray() || llamadas.isEmpty()) {
                 respuesta = m.path("content").asText("").trim();
-                // A veces el modelo escribe la llamada como texto (recordar{"texto":...}): se ejecuta igual
                 List<Map.Entry<String, Map<String, Object>>> escritas = llamadasEscritas(respuesta);
                 if (!escritas.isEmpty()) {
                     StringBuilder salidas = new StringBuilder();
@@ -232,7 +209,6 @@ public class AsistenteIa {
                     respuesta = "";
                     continue;
                 }
-                // El modelo dice que propuso o hizo algo sin haber llamado a la herramienta: se le exige hacerlo
                 if (propuestas.isEmpty() && usadas.isEmpty() && afirmaAccion(respuesta) && !corregido) {
                     corregido = true;
                     log.info("IA: afirmo una accion sin usar herramientas, se le pide corregir: {}", respuesta);
@@ -260,8 +236,6 @@ public class AsistenteIa {
             }
         }
         String motor = "MODELO";
-        // Se pidio una operacion y el modelo no la propuso: nunca se confia en su texto ("registramos la venta…").
-        // La propuesta la arma el motor propio con los datos reales del sistema.
         Optional<String> operacion = pistas.keySet().stream()
                 .filter(n -> herramientas.buscar(n).map(Herramienta::escritura).orElse(false)).findFirst();
         if (propuestas.isEmpty() && operacion.isPresent()) {
@@ -270,7 +244,6 @@ public class AsistenteIa {
             recordarTurno(auth.getName(), texto, local.texto());
             return local;
         }
-        // Respaldo: si el modelo no consulto nada, responde el motor propio con datos reales
         if (usadas.isEmpty() && propuestas.isEmpty()) {
             List<String> partes = new ArrayList<>();
             for (var p : pistas.entrySet()) {
@@ -289,13 +262,10 @@ public class AsistenteIa {
         if (respuesta.isBlank()) {
             respuesta = propuestas.isEmpty() ? String.join(" ", resultados) : "Te propongo lo siguiente. ¿Lo confirmo?";
         }
-        // Ultima barrera: nunca mostrar "propuse…" o "registré…" si no hay nada propuesto ni ejecutado
-        // (la memoria si se guarda al instante: "registré en mi memoria" es verdad)
         if (propuestas.isEmpty() && usadas.isEmpty() && afirmaAccion(respuesta)) {
             respuesta = "No pude preparar esa acción. ¿Me la repites indicando el producto y la cantidad?";
         }
         if (propuestas.isEmpty()) respuesta = sinMuletillas(respuesta);
-        // El motor propio aprende de lo que resolvio el modelo (una sola herramienta = intencion clara)
         if (usadas.size() == 1 && ClasificadorIntenciones.ETIQUETAS.containsKey(usadas.iterator().next())) {
             clasificador.aprender(texto, usadas.iterator().next(), "MODELO", auth.getName());
         }
@@ -303,10 +273,6 @@ public class AsistenteIa {
         return new Respuesta(respuesta, motor, propuestas, ctx.navegar, ctx.descargar, ctx.imprimir, List.of());
     }
 
-    /**
-     * Intencion clara de cada parte de la pregunta ("¿cuánto vendimos hoy y para cuántos días alcanza el arroz?"
-     * -> resumen_ventas, pronosticar_agotamiento), con el fragmento que la origino.
-     */
     Map<String, String> pistasPorPartes(String texto) {
         Map<String, String> r = new LinkedHashMap<>();
         List<String> partes = new ArrayList<>(List.of(texto));
@@ -315,7 +281,6 @@ public class AsistenteIa {
             List<ClasificadorIntenciones.Prediccion> p = clasificador.clasificar(parte);
             if (!seguro(p)) continue;
             Optional<Herramienta> h = herramientas.buscar(p.get(0).intencion());
-            // Una operacion solo se considera pedida con alta certeza
             if (h.isPresent() && (!h.get().escritura() || p.get(0).confianza() >= CONFIANZA_OPERACION)) {
                 r.putIfAbsent(p.get(0).intencion(), parte);
             }
@@ -327,7 +292,6 @@ public class AsistenteIa {
     private static final Pattern LLAMADA_JSON = Pattern.compile(
             "\\{\\s*\"name\"\\s*:\\s*\"([a-z_]+)\"\\s*,\\s*\"arguments\"\\s*:\\s*(\\{.*?\\})\\s*\\}", Pattern.DOTALL);
 
-    /** Llamadas a herramientas que el modelo escribio como texto en lugar de usar tool_calls. */
     List<Map.Entry<String, Map<String, Object>>> llamadasEscritas(String contenido) {
         List<Map.Entry<String, Map<String, Object>>> r = new ArrayList<>();
         for (Pattern patron : List.of(LLAMADA_JSON, LLAMADA_ESCRITA)) {
@@ -338,7 +302,6 @@ public class AsistenteIa {
                     Map<String, Object> args = json.readValue(m.group(2), new TypeReference<Map<String, Object>>() { });
                     r.add(Map.entry(m.group(1), args));
                 } catch (IOException e) {
-                    // no era JSON valido: se deja como texto
                 }
             }
             if (!r.isEmpty()) return r;
@@ -349,7 +312,6 @@ public class AsistenteIa {
     private static final Pattern MULETILLA = Pattern.compile(
             "(por favor,? )?confirma(s)? (para (continuar|finalizar)|si (necesitas|deseas|quieres)[^.?!]*)|confirma si deseas continuar");
 
-    /** Quita frases de relleno como "Confirma para continuar" cuando no hay nada que confirmar. */
     static String sinMuletillas(String texto) {
         List<String> frases = new ArrayList<>();
         for (String f : texto.split("(?<=[.!?])\\s+")) {
@@ -365,12 +327,10 @@ public class AsistenteIa {
             + "|ha sido (registrad|emitid|vendid|anulad|actualizad|cread)[oa]"
             + "|lo confirmo|confirmas? (la|el|este|esta) (venta|entrada|salida|transferencia|ajuste|anulacion|registro|cambio|movimiento))\\b");
 
-    /** Texto que dice haber propuesto o hecho un cambio (sin tildes: "registré" -> "registre"). */
     static boolean afirmaAccion(String texto) {
         return AFIRMA_ACCION.matcher(Texto.normalizar(texto)).find();
     }
 
-    /** Ejecuta una consulta o registra una propuesta; devuelve el texto que se le entrega al modelo. */
     private String usarHerramienta(String nombre, Map<String, Object> args, Contexto ctx, List<Accion> propuestas) {
         log.info("IA herramienta {} {}", nombre, args);
         Optional<Herramienta> h = herramientas.buscar(nombre);
@@ -429,7 +389,6 @@ public class AsistenteIa {
         try {
             s.append("Estado actual: ").append(diagnostico.diagnosticar().resumen());
         } catch (RuntimeException e) {
-            // el diagnostico es informativo: si falla, el asistente sigue funcionando
         }
         return s.toString();
     }
@@ -444,22 +403,17 @@ public class AsistenteIa {
         }
     }
 
-    // =====================================================================================  MOTOR PROPIO
-
     private Respuesta conMotorPropio(String texto, Authentication auth) {
         Matcher recordar = RECORDAR.matcher(texto.trim());
         if (recordar.matches()) return resolverIntencion("recordar", recordar.group(3), auth);
 
         List<ClasificadorIntenciones.Prediccion> p = clasificador.clasificar(texto);
-        // Una pregunta sobre algo que le ensenaron se responde con lo aprendido
         Optional<MemoriaIa.Recuerdo> dato = memoria.respuestaDirecta(texto);
         if (dato.isPresent() && (p.isEmpty() || p.get(0).confianza() < 0.9)) {
             return simple("Según lo que me enseñaron: " + dato.get().texto() + ".", "PROPIO");
         }
-        // "recordar" solo con una orden explicita («recuerda que…»): una pregunta nunca se guarda como recuerdo
         boolean modifica = !p.isEmpty() && herramientas.buscar(p.get(0).intencion()).map(Herramienta::escritura).orElse(false);
         if (!seguro(p) || p.get(0).intencion().equals("recordar") || (modifica && p.get(0).confianza() < CONFIANZA_OPERACION)) {
-            // Quiza lo sabe por algo que le ensenaron
             List<MemoriaIa.Recuerdo> sabe = memoria.relevantes(texto, 3).stream()
                     .filter(r -> r.tipo() == MemoriaIa.Tipo.HECHO).toList();
             if (!sabe.isEmpty()) {
@@ -476,7 +430,6 @@ public class AsistenteIa {
         return resolverIntencion(p.get(0).intencion(), texto, auth);
     }
 
-    /** Seguro si la mas probable supera el minimo o le saca amplia ventaja a la segunda. */
     static boolean seguro(List<ClasificadorIntenciones.Prediccion> p) {
         if (p.isEmpty()) return false;
         double primera = p.get(0).confianza();
@@ -521,7 +474,7 @@ public class AsistenteIa {
                         : t.contains("alerta") ? "alertas" : t.contains("discrep") ? "discrepancias" : "existencias");
                 case "registrar_movimiento" -> movimientoEnFrase(texto, t, a);
                 case "registrar_venta" -> ventaEnFrase(texto, t, a);
-                default -> { /* consultas sin argumentos */ }
+                default -> {  }
             }
             Herramienta h = herramientas.buscar(intencion)
                     .orElseThrow(() -> NegocioException.invalido("Todavía no sé hacer eso"));
@@ -563,14 +516,12 @@ public class AsistenteIa {
             if (t.contains(pago)) a.put("metodo_pago", pago.toUpperCase());
         }
         if (t.contains("factura")) a.put("comprobante", "FACTURA");
-        // "me dieron 20 soles", "pago con 50", "recibi 100": efectivo recibido para el vuelto
         Matcher recibido = RECIBIDO.matcher(t);
         if (recibido.find()) a.put("monto_recibido", recibido.group(3).replace(',', '.'));
         else if (t.contains("nota")) a.put("comprobante", "NOTA_VENTA");
         herramientas.ubicacionEnFrase(texto).ifPresent(u -> a.put("ubicacion", u.nombre()));
     }
 
-    /** Primer numero de la frase que no sea parte de un codigo (P001) ni de un nombre de ubicacion. */
     private static Optional<Integer> cantidadEnFrase(String t) {
         Matcher m = NUMERO.matcher(t);
         while (m.find()) {
@@ -610,11 +561,9 @@ public class AsistenteIa {
         return new Respuesta(r.texto(), "PROPIO", List.of(new Accion(p.id(), p.descripcion())), null, null, false, List.of());
     }
 
-    // =====================================================================================  PROPUESTAS
-
     private Accion proponer(Herramienta h, Map<String, Object> args, Contexto ctx) {
         if (h.soloAdmin() && !ctx.esAdmin()) throw NegocioException.invalido("Solo un administrador puede hacerlo");
-        String descripcion = h.describir().apply(new Args(args), ctx);   // valida los datos antes de proponer
+        String descripcion = h.describir().apply(new Args(args), ctx);
         Pendiente p = guardar(ctx.usuario(), h.nombre(), args, descripcion);
         return new Accion(p.id(), p.descripcion());
     }
@@ -639,7 +588,7 @@ public class AsistenteIa {
         Contexto ctx = new Contexto(auth);
         List<String> hechos = new ArrayList<>();
         for (Pendiente p : lista) {
-            if (pendientes.remove(p.id()) == null) continue;   // otra pestana ya la confirmo
+            if (pendientes.remove(p.id()) == null) continue;
             try {
                 if (p.herramienta().equals(ACCIONES_DIAGNOSTICO)) {
                     @SuppressWarnings("unchecked")
@@ -661,8 +610,6 @@ public class AsistenteIa {
         recordarTurno(auth.getName(), "(confirmó la acción propuesta)", texto);
         return new Respuesta(texto, motorActual(), List.of(), ctx.navegar, ctx.descargar, ctx.imprimir, List.of());
     }
-
-    // =====================================================================================  HISTORIAL
 
     private void anotar(Authentication auth, String rol, String texto) {
         if (texto == null || texto.isBlank()) return;
@@ -689,8 +636,6 @@ public class AsistenteIa {
             while (c.size() > MAX_CONTEXTO) c.removeFirst();
         }
     }
-
-    // =====================================================================================  UTILIDADES
 
     private String motorActual() {
         return modelo.disponible() ? "MODELO" : "PROPIO";

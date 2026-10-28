@@ -25,21 +25,11 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
 
-/**
- * Asistente de diagnostico basado en reglas (funciona sin internet y sin costo).
- *  - diagnosticar(): convierte las alertas activas y el estado de los ventiladores en problemas
- *    con una sugerencia y, cuando se puede, acciones que el asistente sabe ejecutar.
- *  - responder(): entiende ordenes en espanol por palabras clave (texto escrito o dictado por voz).
- *  - ejecutar(): aplica acciones (reconocer alertas, controlar el ventilador).
- * Reparar problemas pide confirmacion; nunca ajusta el stock (las discrepancias siguen con revision humana).
- */
 @Service
 public class AsistenteService {
 
-    /** Minutos con el ventilador encendido sin que baje la temperatura para sospechar una falla. */
     static final long MINUTOS_SIN_MEJORA = 15;
 
-    /** A igual prioridad, primero lo que dana productos (ambiente), luego el stock y por ultimo la conexion. */
     private static final List<TipoAlerta> URGENCIA = List.of(TipoAlerta.TEMPERATURA, TipoAlerta.HUMEDAD,
             TipoAlerta.DISCREPANCIA, TipoAlerta.STOCK_MINIMO, TipoAlerta.DISPOSITIVO_OFFLINE);
 
@@ -68,8 +58,6 @@ public class AsistenteService {
         this.ventas = ventas;
     }
 
-    // ======================= DIAGNOSTICO =======================
-
     @Transactional(readOnly = true)
     public DiagnosticoResponse diagnosticar() {
         List<Problema> problemas = problemas();
@@ -87,7 +75,6 @@ public class AsistenteService {
                 ubicacionesConAlertaTemp.add(idEntidad(a));
             }
         }
-        // Ventilador encendido a mano cuando ya no hace falta: gasto de energia
         for (Dispositivo d : dispositivos.findByActivoTrue()) {
             if (d.getVentiladorModo() != ModoVentilador.ENCENDIDO
                     || ubicacionesConAlertaTemp.contains(d.getUbicacion().getId())) continue;
@@ -188,8 +175,6 @@ public class AsistenteService {
         return s.toString();
     }
 
-    // ======================= CONVERSACION =======================
-
     private static final Pattern REPARAR = patron("repar|soluciona|arregl|corrig|resuelv|haz algo|arreglalo");
     private static final Pattern RECONOCER = patron("reconoc|ya (lo|las) vi|marca(r)? (como )?vist");
     private static final Pattern APAGAR = patron("apag|desactiv|deten|^para |quita");
@@ -206,7 +191,6 @@ public class AsistenteService {
     private static final Pattern GRACIAS = patron("gracias|genial|perfecto|excelente");
     private static final Pattern SI_NO = patron("^(si|no|claro|dale|ok|okey|confirmo|cancela|hazlo)$");
 
-    /** Sin transaccion propia: las ordenes al ventilador abren la suya (una de solo lectura no guardaria cambios). */
     public RespuestaAsistente responder(String texto, Authentication auth) {
         String t = normalizar(texto);
         if (t.isBlank()) return solo("No escuché nada. ¿Puedes repetirlo?");
@@ -234,17 +218,14 @@ public class AsistenteService {
         List<Problema> p = problemas();
         if (p.isEmpty()) return solo("No hay nada que reparar: no hay alertas activas.");
         Map<String, AccionAsistente> acciones = new LinkedHashMap<>();
-        // Primero las acciones que resuelven (ventilador) y despues las de reconocer alertas
         p.stream().flatMap(x -> x.acciones().stream()).filter(a -> a.codigo().startsWith("VENTILADOR"))
                 .forEach(a -> acciones.putIfAbsent(a.codigo(), a));
         p.stream().flatMap(x -> x.acciones().stream()).forEach(a -> acciones.putIfAbsent(a.codigo(), a));
-        // Problemas que el software no puede resolver: alguien debe revisarlos en persona
         long manuales = p.stream().filter(x -> Set.of("STOCK_MINIMO", "DISCREPANCIA", "DISPOSITIVO_OFFLINE")
                 .contains(x.tipo())).count();
         if (acciones.isEmpty()) {
             return new RespuestaAsistente("No puedo resolver estos problemas automáticamente; te dejo qué revisar en cada uno.", p, List.of());
         }
-        // Texto corto para leerlo en voz alta; el detalle de cada accion queda en porConfirmar
         List<String> partes = new ArrayList<>(acciones.values().stream().map(AccionAsistente::descripcion)
                 .filter(d -> !d.startsWith("Marcar como vista")).map(AsistenteService::minuscula).toList());
         long vistas = acciones.keySet().stream().filter(c -> c.startsWith("RECONOCER")).count();
@@ -264,7 +245,6 @@ public class AsistenteService {
                 + ". ¿Las marco como vistas? Seguirán activas hasta que el problema se normalice.", List.of(), acciones);
     }
 
-    /** Ordenes directas: «enciende el ventilador», «apaga el ventilador del ESP32-01», «ventilador en automatico». */
     private RespuestaAsistente ordenVentilador(String t, Authentication auth) {
         List<Dispositivo> todos = dispositivos.findByActivoTrue();
         List<Dispositivo> elegidos = todos.stream().filter(d -> t.contains(normalizar(d.getCodigo()))
@@ -281,15 +261,11 @@ public class AsistenteService {
                     + (d.getVentiladorModo() == ModoVentilador.AUTO ? ", en modo automático." : ", por orden manual.")).toList()));
         }
         if (!esAdmin(auth)) return solo("Solo un administrador puede controlar el ventilador.");
-        // Orden explicita del usuario: se ejecuta sin pedir confirmacion
         List<AccionAsistente> acciones = elegidos.stream().map(d -> accionVentilador(d, modo)).toList();
         return new RespuestaAsistente(ejecutarCodigos(acciones.stream().map(AccionAsistente::codigo).toList(), auth),
                 List.of(), List.of());
     }
 
-    // ======================= ACCIONES =======================
-
-    /** Ejecuta acciones confirmadas por el usuario. Cada una se valida otra vez (los codigos vienen del navegador). */
     public RespuestaAsistente ejecutar(List<String> codigos, Authentication auth) {
         String texto = ejecutarCodigos(codigos, auth);
         List<Problema> p = problemas();
@@ -334,8 +310,6 @@ public class AsistenteService {
         }
         return s.toString();
     }
-
-    // ======================= CONSULTAS =======================
 
     private String ambiente() {
         List<Dispositivo> activos = dispositivos.findByActivoTrue();
@@ -400,8 +374,6 @@ public class AsistenteService {
                 + "«ventilador en automático».";
     }
 
-    // ======================= UTILIDADES =======================
-
     private List<Dispositivo> dispositivosDe(Long ubicacionId) {
         return dispositivos.findByActivoTrue().stream()
                 .filter(d -> d.getUbicacion().getId().equals(ubicacionId)).toList();
@@ -416,7 +388,6 @@ public class AsistenteService {
         return new AccionAsistente("VENTILADOR:" + d.getId() + ":" + modo, que + d.getCodigo());
     }
 
-    /** La clave de la alerta tiene la forma TIPO:entidad:id. */
     private static Long idEntidad(Alerta a) {
         String[] p = a.getClaveDedup().split(":");
         try {
@@ -444,7 +415,6 @@ public class AsistenteService {
         return v.setScale(0, java.math.RoundingMode.HALF_UP).toPlainString() + " por ciento";
     }
 
-    /** "marqué una alerta como vista" x3 -> "marqué 3 alertas como vistas". */
     private static String agrupar(List<String> hechos) {
         long vistas = hechos.stream().filter(h -> h.startsWith("marqué una alerta")).count();
         List<String> r = new ArrayList<>(hechos.stream().filter(h -> !h.startsWith("marqué una alerta")).toList());
@@ -461,7 +431,6 @@ public class AsistenteService {
         return new RespuestaAsistente(texto, List.of(), List.of());
     }
 
-    /** Minusculas, sin tildes y sin signos: «¿Qué ERRORES hay?» -> "que errores hay". */
     static String normalizar(String s) {
         String sinTildes = Normalizer.normalize(s == null ? "" : s, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         return sinTildes.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9ñ ]", " ").replaceAll("\\s+", " ").trim();

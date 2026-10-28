@@ -1,6 +1,6 @@
 'use strict';
 
-let sensoresPeso = [];   // [{sensorId, dispositivo}]
+let sensoresPeso = [];
 
 async function cargarDiscrepancias() {
   const tb = document.getElementById('tbDisc');
@@ -42,7 +42,6 @@ async function cargarSensoresPeso() {
     sensoresPeso.map(s => `<option value="${s.sensorId}">#${s.sensorId} · ${esc(s.dispositivo)}</option>`).join('');
 }
 
-// ---------- Solo administrador ----------
 async function cargarAdmin() {
   const [disps, sensores, ubs, prods] = await Promise.all([
     API.get('/api/dispositivos'), API.get('/api/sensores'), API.get('/api/ubicaciones'),
@@ -92,7 +91,6 @@ function ajustarFormSensor() {
   document.getElementById('lblProdSensor').style.display = esPeso ? '' : 'none';
 }
 
-// ---------- Eventos ----------
 document.getElementById('soloPendientes').addEventListener('change', cargarDiscrepancias);
 document.getElementById('selSensorEst').addEventListener('change', cargarEstimaciones);
 document.getElementById('selTipo').addEventListener('change', ajustarFormSensor);
@@ -141,7 +139,6 @@ document.getElementById('tbDisp').addEventListener('click', async (e) => {
   } catch (err) { aviso('aviso', 'error', err.message); }
 });
 
-// Modo del ventilador (rele del ESP32): AUTO lo enciende al superar la temperatura maxima
 document.getElementById('tbDisp').addEventListener('change', async (e) => {
   const sel = e.target.closest('select[data-vent]');
   if (!sel) return;

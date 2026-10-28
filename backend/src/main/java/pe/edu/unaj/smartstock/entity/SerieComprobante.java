@@ -2,7 +2,6 @@ package pe.edu.unaj.smartstock.entity;
 
 import jakarta.persistence.*;
 
-/** Serie y ultimo correlativo emitido de cada tipo de comprobante (B001, F001, NV01). */
 @Entity
 @Table(name = "serie_comprobante")
 public class SerieComprobante {

@@ -4,11 +4,6 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
-/**
- * Calibracion de una celda de carga.
- * factor: factor de escala HX711 (lo usa el firmware; aqui queda registrado).
- * taraG: peso del recipiente/bandeja que se resta para obtener el peso neto.
- */
 @Entity
 @Table(name = "calibracion")
 public class Calibracion {

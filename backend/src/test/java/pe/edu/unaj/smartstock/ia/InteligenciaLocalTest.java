@@ -11,7 +11,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
-/** Motor propio de la IA: texto, clasificador que aprende en linea y pronostico de demanda. */
 class InteligenciaLocalTest {
 
     @Test
@@ -42,7 +41,6 @@ class InteligenciaLocalTest {
         assertEquals(1, c.aprendidos());
     }
 
-    /** Sustituto de la base: acepta los INSERT y no tiene ejemplos guardados. */
     static class BaseEnMemoria extends JdbcTemplate {
         @Override
         public int update(String sql, Object... args) { return 1; }
@@ -55,7 +53,7 @@ class InteligenciaLocalTest {
     void pronosticaConSuavizadoExponencial() {
         LocalDate hoy = LocalDate.of(2026, 10, 27);
         Map<LocalDate, Long> ventas = new HashMap<>();
-        for (int i = 0; i < 21; i++) ventas.put(hoy.minusDays(i), 4L);   // 4 por dia durante 3 semanas
+        for (int i = 0; i < 21; i++) ventas.put(hoy.minusDays(i), 4L);
         var p = PronosticoService.pronosticar(1L, "P001", "Pernos", 5, 40, ventas, hoy);
         assertEquals(0, new BigDecimal("4.00").compareTo(p.demandaDiaria()));
         assertEquals(10, p.diasRestantes());
@@ -69,7 +67,7 @@ class InteligenciaLocalTest {
         LocalDate hoy = LocalDate.of(2026, 10, 27);
         Map<LocalDate, Long> ventas = new HashMap<>();
         for (int i = 10; i < 30; i++) ventas.put(hoy.minusDays(i), 2L);
-        for (int i = 0; i < 10; i++) ventas.put(hoy.minusDays(i), 10L);   // la demanda subio
+        for (int i = 0; i < 10; i++) ventas.put(hoy.minusDays(i), 10L);
         var p = PronosticoService.pronosticar(1L, "P001", "Pernos", 0, 100, ventas, hoy);
         assertTrue(p.demandaDiaria().doubleValue() > 9, "da mas peso a lo reciente: " + p.demandaDiaria());
     }

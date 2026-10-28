@@ -1,20 +1,15 @@
 'use strict';
 
-// Punto de venta. El precio que se cobra lo fija el servidor (precio del producto al momento
-// de la venta); aqui solo se muestra para que el vendedor vea el total antes de cobrar.
-
 const TAG_VENTA = { EMITIDA: 'ok', ANULADA: 'bad' };
 const NOMBRE_COMPROBANTE = { BOLETA: 'Boleta de venta', FACTURA: 'Factura', NOTA_VENTA: 'Nota de venta' };
-const BOLETA_CON_DOCUMENTO = 700;   // igual que VentaService.BOLETA_CON_DOCUMENTO
+const BOLETA_CON_DOCUMENTO = 700;
 
-let productos = [];                 // productos activos
-let disponibles = new Map();        // productoId -> stock en la ubicacion elegida
-const carrito = new Map();          // productoId -> cantidad
+let productos = [];
+let disponibles = new Map();
+const carrito = new Map();
 
 const soles = v => 'S/ ' + Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const $ = id => document.getElementById(id);
-
-// ---------------------------------------------------------------- carrito
 
 async function cargarDisponibles() {
   const ub = $('selUbicacion').value;
@@ -27,7 +22,6 @@ async function cargarDisponibles() {
 function productoDe(texto) {
   const t = texto.trim().toLowerCase();
   if (!t) return null;
-  // El datalist completa "CODIGO - Nombre"; tambien se acepta solo el codigo
   return productos.find(p => `${p.codigo} - ${p.nombre}`.toLowerCase() === t)
       || productos.find(p => p.codigo.toLowerCase() === t)
       || null;
@@ -85,8 +79,6 @@ function actualizarTotales() {
   $('btnCobrar').disabled = carrito.size === 0 || (efectivo && recibido < total);
 }
 
-// ---------------------------------------------------------------- comprobante
-
 function htmlTicket(v) {
   const filas = v.detalles.map(d => `<tr>
       <td>${d.cantidad} × ${esc(d.producto)}<div class="muted">${esc(d.codigo)} · ${soles(d.precioUnitario)}</div></td>
@@ -122,8 +114,6 @@ function cerrarTicket() {
   $('modalTicket').hidden = true;
   document.body.classList.remove('con-ticket');
 }
-
-// ---------------------------------------------------------------- consultas
 
 async function cargarResumen() {
   try {
@@ -169,8 +159,6 @@ async function refrescar() {
   cargarResumen();
   cargarVentas();
 }
-
-// ---------------------------------------------------------------- eventos
 
 $('formItem').addEventListener('submit', (e) => {
   e.preventDefault();

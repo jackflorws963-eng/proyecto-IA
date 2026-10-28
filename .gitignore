@@ -1,16 +1,13 @@
-# Secretos: nunca al repositorio
 firmware/**/secrets.h
 .env
 *.env
 
-# Compilacion y empaquetado (se regeneran con mvnw / empaquetar-escritorio.ps1)
 backend/target/
 dist/
 *.class
 __pycache__/
 *.pyc
 
-# IDE
 .idea/
 *.iml
 .vscode/

@@ -319,7 +319,16 @@ python tools/simulador_esp32.py --clave <DEVICE_KEY> --duplicar      # reenvío 
 Antes de simular, registre una **entrada de 20 unidades de P001 en Almacén A**; si no, cualquier peso genera una discrepancia (stock inicial 0). La discrepancia se abre tras **3 lecturas seguidas** fuera del umbral.
 
 ### ESP32
-1. Arme las conexiones descritas al inicio de `smartstock_esp32.ino`.
+1. Arme las conexiones (placa "ESP32 Dev Module", core esp32 de Espressif 2.x o 3.x):
+
+   | Componente | Conexiones |
+   |---|---|
+   | DHT22 | VCC→3V3, GND→GND, DATA→GPIO4 (resistencia de 10 kΩ a 3V3 si el módulo no la trae) |
+   | HX711 | VCC→3V3, GND→GND, DT→GPIO16, SCK→GPIO17 |
+   | Celda de carga | rojo→E+, negro→E−, blanco→A−, verde→A+ |
+   | Relé (1 canal) | VCC→5V (VIN), GND→GND, IN→GPIO26; el ventilador va en COM/NO |
+
+   Bibliotecas (Arduino IDE → Gestor de bibliotecas): *DHT sensor library* (Adafruit) + *Adafruit Unified Sensor*, *HX711* (Bogdan Necula) y *ArduinoJson* 7.x. Parámetros del firmware: medición y envío cada 5 s, lotes de hasta 30 lecturas, buffer de 360 lecturas (~10 min sin conexión), promedio de 10 muestras de peso, `RELE_ACTIVO_EN_BAJO = true`, respaldo local del ventilador a 30 °C tras 10 min sin servidor.
 2. Cargue `calibracion_hx711.ino`, siga el Monitor Serie y anote el factor.
 3. Copie `secrets.h.example` como `secrets.h` y complete Wi-Fi, **IP de la PC** (no `localhost`), la clave del dispositivo (la que mostró el asistente) y el factor.
 4. Cargue `smartstock_esp32.ino` **con la balanza vacía** (ajusta y guarda el cero; `z` en el Monitor Serie lo repite).
@@ -385,6 +394,8 @@ El diagnóstico por reglas (alertas, ventiladores) sigue activo: revisa cada 20 
 | Discrepancias detectadas | Cantidad y decisión tomada | #11 |
 | % de alertas válidas | Clasificar cada alerta como válida o falsa | #12 |
 | Recuperación tras desconexión | Monitor Serie y alertas OFFLINE cerradas | #13 |
+
+Los números (#8, #9…) indican la posición de la consulta dentro de `database/verificacion.sql`: #1 es la primera y #15 la última.
 
 Ninguna precisión se reporta sin haberla medido.
 

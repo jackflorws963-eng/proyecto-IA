@@ -11,7 +11,6 @@ import pe.edu.unaj.smartstock.service.VentaService;
 
 import java.time.LocalDate;
 
-/** Ventas: registrar y consultar (ADMIN/OPERADOR); anular solo ADMIN (ver SecurityConfig). */
 @RestController
 @RequestMapping("/api/ventas")
 public class
@@ -23,14 +22,12 @@ VentaController {
         this.service = service;
     }
 
-    /** POST /api/ventas {tipoComprobante, ubicacionId, clienteDocumento, clienteNombre, metodoPago, montoRecibido, items:[{productoId, cantidad}]} */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public VentaResponse registrar(@Valid @RequestBody VentaRequest r, Authentication auth) {
         return service.registrar(r, auth.getName());
     }
 
-    /** GET /api/ventas?desde=2026-10-01&hasta=2026-10-31&estado=EMITIDA (por defecto, los ultimos 7 dias) */
     @GetMapping
     public PaginaResponse<VentaResponse> listar(
             @RequestParam(required = false) EstadoVenta estado,

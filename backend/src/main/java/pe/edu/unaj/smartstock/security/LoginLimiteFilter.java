@@ -8,7 +8,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/** Rechaza con 429 el login de un usuario+IP bloqueado por demasiados intentos fallidos. */
 public class LoginLimiteFilter extends OncePerRequestFilter {
 
     public static final String URL_LOGIN = "/api/auth/login";
@@ -19,7 +18,6 @@ public class LoginLimiteFilter extends OncePerRequestFilter {
         this.intentos = intentos;
     }
 
-    /** Clave de conteo para el login: usuario + IP de origen. */
     public static String clave(HttpServletRequest req, String username) {
         return "login:" + username + "@" + req.getRemoteAddr();
     }

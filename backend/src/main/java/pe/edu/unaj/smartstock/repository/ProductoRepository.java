@@ -13,7 +13,6 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     boolean existsByCodigoIgnoreCaseAndIdNot(String codigo, Long id);
     long countByActivoTrue();
 
-    /** Busqueda por texto (codigo o nombre), categoria y estado, paginada. */
     @Query("""
            SELECT p FROM Producto p
            WHERE (:q = '' OR lower(p.nombre) LIKE lower(concat('%', :q, '%'))

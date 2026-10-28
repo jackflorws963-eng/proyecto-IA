@@ -5,7 +5,6 @@ import org.hibernate.annotations.Immutable;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
-/** Medicion fisica. No modifica el inventario. Inmutable (trigger en BD). */
 @Entity
 @Immutable
 @Table(name = "lectura")

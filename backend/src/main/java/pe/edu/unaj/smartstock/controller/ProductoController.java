@@ -18,7 +18,6 @@ public class ProductoController {
         this.service = service;
     }
 
-    /** GET /api/productos?q=perno&categoriaId=1&soloActivos=true&pagina=0&tamano=20 */
     @GetMapping
     public PaginaResponse<ProductoResponse> buscar(@RequestParam(defaultValue = "") String q,
                                                    @RequestParam(required = false) Long categoriaId,
@@ -40,7 +39,6 @@ public class ProductoController {
         return service.editar(id, r);
     }
 
-    /** PATCH /api/productos/5/estado?activo=false  (desactivacion logica, no se borra) */
     @PatchMapping("/{id}/estado")
     public ProductoResponse estado(@PathVariable Long id, @RequestParam boolean activo) {
         return service.cambiarEstado(id, activo);

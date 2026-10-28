@@ -13,15 +13,10 @@ import pe.edu.unaj.smartstock.instalacion.ConfiguradorBaseDatos.Datos;
 
 import java.util.Optional;
 
-/**
- * Ventana del primer arranque: pide la conexion a PostgreSQL y las contrasenas iniciales.
- * El trabajo con la base lo hace {@link pe.edu.unaj.smartstock.instalacion.ConfiguradorBaseDatos}.
- */
 final class AsistenteInstalacion {
 
     private AsistenteInstalacion() { }
 
-    /** Muestra el formulario (hilo de JavaFX). Vacio si la persona cancela. */
     static Optional<Datos> pedirDatos(Datos anteriores, String error) {
         Dialog<ButtonType> dialogo = new Dialog<>();
         dialogo.setTitle("SmartStock IoT - Configuracion inicial");

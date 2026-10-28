@@ -1,23 +1,17 @@
 'use strict';
 
-// SmartStock IoT - asistente de IA local (sin internet).  Autor: Brayan (BR)
-// Chat reutilizable (pagina del asistente y burbuja flotante en todas las pantallas), voz y efectos
-// sobre la interfaz: abrir pantallas, descargar reportes e imprimir. La conversacion vive en el
-// servidor, asi que continua al cambiar de pantalla.
-
 (() => {
   if (window.IA) return;
 
   let vozActiva = true;
-  try { vozActiva = localStorage.getItem('asistenteVoz') !== 'no'; } catch { /* sin almacenamiento */ }
+  try { vozActiva = localStorage.getItem('asistenteVoz') !== 'no'; } catch {  }
 
-  // ---------------------------------------------------------------- voz
   const Voz = {
     escritorio() { return !!(window.escritorio && window.escritorio.vozDisponible && window.escritorio.vozDisponible()); },
     activa() { return vozActiva; },
     alternar() {
       vozActiva = !vozActiva;
-      try { localStorage.setItem('asistenteVoz', vozActiva ? 'si' : 'no'); } catch { /* sin almacenamiento */ }
+      try { localStorage.setItem('asistenteVoz', vozActiva ? 'si' : 'no'); } catch {  }
       if (!vozActiva) this.callar();
       return vozActiva;
     },
@@ -51,11 +45,9 @@
     },
   };
 
-  // Java (PuenteEscritorio) y la Web Speech API avisan aqui; lo recibe el chat que pidio escuchar
   let escuchaActual = null;
   window.vozEvento = (tipo, dato) => { if (escuchaActual) escuchaActual(tipo, dato); };
 
-  // ---------------------------------------------------------------- efectos sobre la interfaz
   function aplicarEfectos(r) {
     if (r.descargar) {
       if (window.escritorio && window.escritorio.descargar) window.escritorio.descargar(r.descargar);
@@ -66,14 +58,13 @@
       else window.print();
     }
     if (r.navegar && r.navegar !== location.pathname) {
-      try { sessionStorage.setItem('iaAbierta', '1'); } catch { /* sin almacenamiento */ }
+      try { sessionStorage.setItem('iaAbierta', '1'); } catch {  }
       setTimeout(() => { location.href = r.navegar; }, 900);
     }
   }
 
   const MOTOR = { MODELO: 'IA local', PROPIO: 'Motor propio' };
 
-  // ---------------------------------------------------------------- chat
   function crearChat(contenedor, opciones = {}) {
     contenedor.innerHTML = `
       <div class="chat" data-mensajes aria-live="polite"></div>
@@ -203,20 +194,18 @@
       Voz.escuchar();
     });
 
-    // Continua la conversacion (tambien la que empezo en otra pantalla)
     (async () => {
       try {
         const [historial, pendientes] = await Promise.all([API.get('/api/ia/historial'), API.get('/api/ia/pendientes')]);
         historial.forEach(m => burbuja(m.rol, m.texto));
         if (pendientes.length) pintarPropuestas(burbuja('ia', 'Tienes acciones esperando tu confirmación:'), pendientes);
         if (!historial.length && opciones.bienvenida) burbuja('ia', opciones.bienvenida);
-      } catch { /* sin historial */ }
+      } catch {  }
     })();
 
     return { enviar, decir: (texto) => { burbuja('ia', texto); Voz.hablar(texto); }, foco: () => input.focus() };
   }
 
-  // ---------------------------------------------------------------- burbuja flotante
   function crearBurbuja() {
     if (document.body.dataset.sinBurbuja !== undefined || document.getElementById('iaBurbuja')) return;
     const boton = document.createElement('button');
@@ -235,7 +224,7 @@
 
     async function abrir() {
       panel.hidden = false;
-      try { sessionStorage.setItem('iaAbierta', '1'); } catch { /* sin almacenamiento */ }
+      try { sessionStorage.setItem('iaAbierta', '1'); } catch {  }
       if (!chat) {
         chat = crearChat(panel.querySelector('[data-chat]'), {
           bienvenida: 'Hola, soy tu asistente. Puedo consultar y operar todo SmartStock. ¿Qué necesitas?',
@@ -243,13 +232,13 @@
         try {
           const e = await API.get('/api/ia/estado');
           panel.querySelector('[data-motor]').textContent = e.modeloDisponible ? `${e.modelo} · sin internet` : 'motor propio · sin internet';
-        } catch { /* informativo */ }
+        } catch {  }
       }
       chat.foco();
     }
     function cerrar() {
       panel.hidden = true;
-      try { sessionStorage.removeItem('iaAbierta'); } catch { /* sin almacenamiento */ }
+      try { sessionStorage.removeItem('iaAbierta'); } catch {  }
     }
     boton.addEventListener('click', () => (panel.hidden ? abrir() : cerrar()));
     panel.querySelector('[data-cerrar]').addEventListener('click', cerrar);
@@ -257,7 +246,7 @@
       if (e.ctrlKey && (e.key === 'i' || e.key === 'I')) { e.preventDefault(); panel.hidden ? abrir() : cerrar(); }
     });
     let abierta = false;
-    try { abierta = sessionStorage.getItem('iaAbierta') === '1'; } catch { /* sin almacenamiento */ }
+    try { abierta = sessionStorage.getItem('iaAbierta') === '1'; } catch {  }
     if (abierta) abrir();
   }
 

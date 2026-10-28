@@ -20,14 +20,6 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-/**
- * Inventario estimado por peso.
- *   peso_neto = lectura - tara
- *   cantidad_estimada = peso_neto / peso_unitario
- *   diferencia_% = |estimada - registrada| / max(registrada, 1) * 100
- * Si la diferencia supera el umbral se abre UNA discrepancia PENDIENTE por sensor.
- * El stock solo cambia si un ADMIN la aprueba (genera un movimiento de AJUSTE).
- */
 @Service
 public class EstimacionService {
 
@@ -44,7 +36,6 @@ public class EstimacionService {
     private final BigDecimal umbralUnidades;
     private final int lecturasConfirmacion;
 
-    /** Al aprobar, la ultima estimacion del sensor no puede ser mas antigua que esto. */
     static final Duration ANTIGUEDAD_MAXIMA_ESTIMACION = Duration.ofMinutes(10);
 
     public EstimacionService(CalibracionRepository calibraciones, EstimacionRepository estimaciones,
@@ -68,12 +59,11 @@ public class EstimacionService {
         this.lecturasConfirmacion = Math.max(lecturasConfirmacion, 1);
     }
 
-    // ---------- Calculo (funciones puras, probadas con pruebas unitarias) ----------
     public static BigDecimal cantidadEstimada(BigDecimal pesoNetoG, BigDecimal pesoUnitarioG) {
         if (pesoUnitarioG == null || pesoUnitarioG.signum() <= 0) {
             throw NegocioException.invalido("Peso unitario no configurado");
         }
-        BigDecimal neto = pesoNetoG.max(BigDecimal.ZERO);   // ruido negativo = 0 unidades
+        BigDecimal neto = pesoNetoG.max(BigDecimal.ZERO);
         return neto.divide(pesoUnitarioG, 2, RoundingMode.HALF_UP);
     }
 
@@ -83,11 +73,10 @@ public class EstimacionService {
                 .multiply(BigDecimal.valueOf(100)).divide(base, 2, RoundingMode.HALF_UP);
     }
 
-    // ---------- Procesamiento de cada lectura de peso ----------
     @Transactional
     public void procesarLecturaPeso(Sensor sensor, Lectura lectura) {
         Producto p = sensor.getProducto();
-        if (p == null || p.getPesoUnitarioG() == null) return;   // sensor sin producto configurado
+        if (p == null || p.getPesoUnitarioG() == null) return;
         Ubicacion u = sensor.getDispositivo().getUbicacion();
 
         BigDecimal tara = calibraciones.findBySensorIdAndVigenteTrue(sensor.getId())
@@ -131,17 +120,12 @@ public class EstimacionService {
         return diferenciaPct(estimada, registrada).compareTo(umbralPct) > 0 && difUnidades.compareTo(umbralUnidades) >= 0;
     }
 
-    /**
-     * Una sola lectura no basta (alguien apoya la mano, se coloca un objeto un instante):
-     * las ultimas N estimaciones del sensor deben superar el umbral.
-     */
     private boolean confirmadaPorLecturasSeguidas(Long sensorId) {
         List<Estimacion> ultimas = estimaciones.findBySensorIdOrderByIdDesc(sensorId, PageRequest.of(0, lecturasConfirmacion));
         return ultimas.size() >= lecturasConfirmacion
                 && ultimas.stream().allMatch(x -> superaUmbral(x.getCantidadEstimada(), x.getCantidadRegistrada()));
     }
 
-    // ---------- Revision humana ----------
     @Transactional(readOnly = true)
     public List<DiscrepanciaResponse> listarDiscrepancias(boolean soloPendientes) {
         List<Discrepancia> lista = soloPendientes
@@ -150,13 +134,6 @@ public class EstimacionService {
         return lista.stream().map(DiscrepanciaResponse::de).toList();
     }
 
-    /**
-     * Aprueba: ajusta el stock registrado a la cantidad que hay AHORA en la balanza, es decir,
-     * a la estimacion MAS RECIENTE del sensor (no a la del momento de la deteccion: si despues
-     * hubo ventas o entradas, aquella ya no representa lo que hay en el estante).
-     * El ajuste es un movimiento AJUSTE_POSITIVO / AJUSTE_NEGATIVO vinculado a la discrepancia
-     * y se calcula contra el stock registrado actual.
-     */
     @Transactional
     public DiscrepanciaResponse aprobar(Long id, String username, String comentario) {
         Discrepancia d = pendiente(id);
@@ -189,7 +166,6 @@ public class EstimacionService {
         return DiscrepanciaResponse.de(d);
     }
 
-    /** Rechaza: el stock registrado se mantiene (p. ej. habia un objeto extra sobre la balanza). */
     @Transactional
     public DiscrepanciaResponse rechazar(Long id, String username, String comentario) {
         Discrepancia d = pendiente(id);
@@ -218,7 +194,6 @@ public class EstimacionService {
         return d;
     }
 
-    // ---------- Calibracion ----------
     @Transactional
     public CalibracionResponse calibrar(CalibracionRequest r, String username) {
         Sensor s = sensores.findById(r.sensorId()).orElseThrow(() -> NegocioException.noEncontrado("Sensor", r.sensorId()));
@@ -226,7 +201,7 @@ public class EstimacionService {
         if (r.factor().signum() == 0) throw NegocioException.invalido("El factor no puede ser 0");
         calibraciones.findBySensorIdAndVigenteTrue(s.getId()).ifPresent(c -> {
             c.setVigente(false);
-            calibraciones.saveAndFlush(c);   // libera el indice unico parcial antes de insertar la nueva
+            calibraciones.saveAndFlush(c);
         });
         Calibracion c = new Calibracion();
         c.setSensor(s);

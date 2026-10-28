@@ -17,6 +17,6 @@ class ReporteServiceTest {
     @Test
     void evitaInyeccionDeFormulas() {
         assertEquals("'=SUMA(A1)", ReporteService.escapar("=SUMA(A1)"));
-        assertEquals("-12.5", ReporteService.escapar("-12.5"));   // numeros negativos se mantienen
+        assertEquals("-12.5", ReporteService.escapar("-12.5"));
     }
 }

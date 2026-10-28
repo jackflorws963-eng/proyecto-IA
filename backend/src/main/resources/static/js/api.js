@@ -1,4 +1,3 @@
-// SmartStock IoT - utilidades comunes del frontend
 'use strict';
 
 const API = {
@@ -32,7 +31,6 @@ const API = {
   put(url, cuerpo) { return this.request('PUT', url, cuerpo); },
   patch(url) { return this.request('PATCH', url); },
 
-  // Recorre todas las paginas de /api/productos (el servidor entrega como maximo 100 por pagina)
   async todosLosProductos(soloActivos) {
     const todos = [];
     for (let pagina = 0; ; pagina++) {
@@ -43,15 +41,12 @@ const API = {
   },
 };
 
-// Token CSRF: el servidor lo deja en la cookie XSRF-TOKEN y se devuelve en la cabecera
-// X-XSRF-TOKEN en toda peticion que modifica datos. Otro sitio no puede leer la cookie.
 function csrfHeaders(metodo) {
   if (metodo === 'GET') return {};
   const m = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
   return m ? { 'X-XSRF-TOKEN': decodeURIComponent(m[1]) } : {};
 }
 
-// Escapa texto antes de insertarlo como HTML (evita XSS)
 function esc(v) {
   if (v === null || v === undefined) return '';
   return String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -94,13 +89,11 @@ function formJSON(form) {
   return datos;
 }
 
-// Version mostrada en la interfaz (igual que <version> del pom.xml)
 const VERSION_APP = '2.1.0';
 
 const TAG_PRIORIDAD = { ALTA: 'bad', MEDIA: 'warn', BAJA: 'info' };
 const TAG_ESTADO_ALERTA = { ABIERTA: 'bad', RECONOCIDA: 'warn', CERRADA: 'gris' };
 
-// Usuario actual y menu lateral
 let USUARIO = null;
 const esAdmin = () => USUARIO && USUARIO.rol === 'ADMIN';
 
@@ -123,7 +116,6 @@ async function iniciarPagina(activa) {
     try { await API.post('/api/auth/logout'); } finally { location.href = '/login.html'; }
   });
   document.querySelectorAll('.solo-admin').forEach(el => { if (!esAdmin()) el.style.display = 'none'; });
-  // Asistente de IA flotante en todas las pantallas (la pagina del asistente lo carga por su cuenta)
   if (!window.IA && !document.getElementById('iaScript')) {
     const s = document.createElement('script');
     s.id = 'iaScript';
