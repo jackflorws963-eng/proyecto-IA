@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartStock IoT · Alertas y reportes</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="cabecera"><div><h1>Alertas y reportes</h1><div class="muted">Historial de alertas, exportación CSV y auditoría</div></div></div>
+    <div id="aviso" class="aviso"></div>
+
+    <section class="panel">
+      <h2>Alertas</h2>
+      <div class="filtros" style="margin-bottom:10px">
+        <label>Estado <select id="aEstado"><option value="">Todos</option><option>ABIERTA</option><option>RECONOCIDA</option><option>CERRADA</option></select></label>
+        <label>Desde <input type="date" id="aDesde"></label>
+        <label>Hasta <input type="date" id="aHasta"></label>
+        <button class="sec" id="btnAlertas">Filtrar</button>
+      </div>
+      <div class="tabla-wrap"><table>
+        <thead><tr><th>Tipo</th><th>Prioridad</th><th>Estado</th><th>Mensaje</th><th class="num">Veces</th><th>Primera</th><th>Última</th><th>Reconocida por</th><th></th></tr></thead>
+        <tbody id="tbAlertas"></tbody>
+      </table></div>
+    </section>
+
+    <section class="panel solo-admin">
+      <h2>Reportes (CSV para Excel)</h2>
+      <div class="filtros" style="margin-bottom:12px">
+        <label>Desde <input type="date" id="rDesde"></label>
+        <label>Hasta <input type="date" id="rHasta"></label>
+        <label>Sensor (lecturas) <input type="number" id="rSensor" min="1" value="1" style="width:90px;min-width:90px"></label>
+        <label>Responsable (movimientos) <input id="rUsuario" placeholder="todos"></label>
+      </div>
+      <div class="filtros">
+        <button class="sec" data-rep="existencias">Existencias actuales</button>
+        <button class="sec" data-rep="movimientos">Historial de movimientos</button>
+        <button class="sec" data-rep="lecturas">Lecturas de sensor</button>
+        <button class="sec" data-rep="alertas">Alertas por periodo</button>
+        <button class="sec" data-rep="discrepancias">Diferencias físico vs sistema</button>
+      </div>
+    </section>
+
+    <section class="panel solo-admin">
+      <h2>Auditoría (últimos 200 registros)</h2>
+      <div class="tabla-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Entidad</th><th class="num">ID</th><th>Detalle</th></tr></thead>
+        <tbody id="tbAud"></tbody>
+      </table></div>
+    </section>
+  </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/alertas.js"></script>
+</body>
+</html>

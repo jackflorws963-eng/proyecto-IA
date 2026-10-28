@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.6</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>pe.edu.unaj</groupId>
+    <artifactId>smartstock-iot</artifactId>
+    <version>2.1.0</version>
+    <name>SmartStock IoT</name>
+    <description>Sistema Inteligente de Inventario mediante Internet de las Cosas</description>
+
+    <developers>
+        <developer>
+            <id>BR</id>
+            <name>Brayan</name>
+            <email>2024207037.est@unaj.edu.pe</email>
+            <roles>
+                <role>Desarrollador full stack</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <properties>
+        <java.version>21</java.version>
+        <javafx.version>21.0.12</javafx.version>
+        <!-- base para el argLine de surefire (otros plugins pueden agregar opciones) -->
+        <argLine></argLine>
+    </properties>
+
+    <dependencies>
+        <!-- API REST + servidor de archivos estaticos (frontend) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- Persistencia JPA (Hibernate) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <!-- Salud del servidor (/actuator/health) para Docker y el instalador -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- Login, roles, BCrypt -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <!-- Validaciones del backend (@NotNull, @Positive, ...) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <!-- Driver PostgreSQL -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- Migraciones versionadas del esquema SQL -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
+        <!-- Aplicacion de escritorio: ventana JavaFX con navegador integrado (WebView) -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-web</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- Pruebas -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <!-- Nombre fijo del .jar: lo usan el empaquetador, el instalador y Docker -->
+        <finalName>smartstock-iot</finalName>
+        <plugins>
+            <!-- Mockito como agente de Java en las pruebas (el JDK dejara de permitir que se cargue solo) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!-- El .jar abre la ventana de escritorio. Con la opcion "servidor"
+                         (o en un equipo sin pantalla, como Docker) arranca solo el servidor -->
+                    <mainClass>pe.edu.unaj.smartstock.escritorio.Lanzador</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

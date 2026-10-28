@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartStock IoT · Dashboard</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/app.css">
+  <!-- Chart.js 4.4.1 (unica libreria externa), copia local: funciona sin internet (app de escritorio) -->
+  <script src="/js/vendor/chart.umd.js"
+          integrity="sha384-dug+JxfBvklEQdJ4AYuBBAIScUz0bVN73xpy273gcAwHjb3qI0fXmuYNaNfdyYJG"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="cabecera">
+      <div>
+        <h1>Dashboard</h1>
+        <div class="muted">Actualización automática cada 5 s · <span id="ultimaAct">cargando...</span></div>
+      </div>
+      <div class="filtros">
+        <label>Periodo de gráficos
+          <select id="horas">
+            <option value="1">Última hora</option>
+            <option value="6" selected>Últimas 6 h</option>
+            <option value="24">Últimas 24 h</option>
+            <option value="168">Últimos 7 días</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div id="aviso" class="aviso"></div>
+
+    <section class="kpis" id="kpis"><div class="estado">Cargando indicadores...</div></section>
+
+    <section class="grid g3">
+      <div class="panel"><h2>Temperatura (°C)</h2><div class="chart-box"><canvas id="chTemp"></canvas></div></div>
+      <div class="panel"><h2>Humedad (%)</h2><div class="chart-box"><canvas id="chHum"></canvas></div></div>
+      <div class="panel"><h2>Peso en balanza (g)</h2><div class="chart-box"><canvas id="chPeso"></canvas></div></div>
+    </section>
+
+    <section class="grid g2">
+      <div class="panel">
+        <h2>Últimas lecturas</h2>
+        <div class="tabla-wrap"><table>
+          <thead><tr><th>Dispositivo</th><th>Sensor</th><th class="num">Valor</th><th>Fecha</th><th>Estado</th></tr></thead>
+          <tbody id="tbLecturas"></tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h2>Dispositivos</h2>
+        <div class="tabla-wrap"><table>
+          <thead><tr><th>Código</th><th>Ubicación</th><th>Último contacto</th><th>Conexión</th></tr></thead>
+          <tbody id="tbDispositivos"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <section class="grid g2">
+      <div class="panel">
+        <h2>Alertas activas</h2>
+        <div class="tabla-wrap"><table>
+          <thead><tr><th>Prioridad</th><th>Mensaje</th><th class="num">Veces</th><th>Última</th></tr></thead>
+          <tbody id="tbAlertas"></tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h2>Existencias por producto</h2>
+        <div class="chart-box"><canvas id="chStock"></canvas></div>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/dashboard.js"></script>
+</body>
+</html>

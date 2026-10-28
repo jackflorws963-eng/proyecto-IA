@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartStock IoT · Ingreso</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="login-body">
+  <main class="login-card">
+    <div class="logo" style="color:#0b1f2a;font-size:22px;font-weight:700">Smart<span style="color:#0f766e">Stock</span> IoT</div>
+    <p class="muted">Sistema inteligente de inventario</p>
+    <div id="aviso" class="aviso"></div>
+    <form id="formLogin">
+      <label>Usuario <input name="username" autocomplete="username" required></label>
+      <label>Contraseña <input name="password" type="password" autocomplete="current-password" required></label>
+      <button type="submit" id="btn">Ingresar</button>
+    </form>
+    <div class="creditos">Desarrollado por BR · Brayan</div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/login.js"></script>
+</body>
+</html>

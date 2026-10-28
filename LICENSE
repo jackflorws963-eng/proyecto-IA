@@ -1,0 +1,12 @@
+Copyright (c) 2026 Brayan (BR). Todos los derechos reservados.
+
+SmartStock IoT - Sistema Inteligente de Inventario mediante Internet de las Cosas.
+
+Este software y su documentacion son obra de su autor. No se permite copiar, modificar,
+distribuir ni publicar total o parcialmente este proyecto sin autorizacion escrita del autor,
+salvo para su evaluacion academica.
+
+Componentes de terceros incluidos o usados, cada uno bajo su propia licencia:
+Spring Boot, Hibernate, Flyway y Spring Security (Apache 2.0), driver JDBC de PostgreSQL (BSD-2),
+OpenJFX (GPL v2 con Classpath Exception), Chart.js (MIT) y el JDK de OpenJDK incluido en el
+instalador (GPL v2 con Classpath Exception).

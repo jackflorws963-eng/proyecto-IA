@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartStock IoT · Productos</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="cabecera"><div><h1>Productos</h1><div class="muted">Catálogo, categorías y ubicaciones</div></div></div>
+    <div id="aviso" class="aviso"></div>
+
+    <section class="panel solo-admin">
+      <h2 id="tituloForm">Nuevo producto</h2>
+      <form id="formProducto" class="fila">
+        <input type="hidden" name="id">
+        <label>Código <input name="codigo" required maxlength="30" pattern="[A-Za-z0-9_\-]+"></label>
+        <label>Nombre <input name="nombre" required maxlength="120"></label>
+        <label>Categoría <select name="categoriaId" id="selCategoria" required></select></label>
+        <label>Unidad <input name="unidad" required maxlength="20" value="unidad"></label>
+        <label>Precio (S/) <input name="precio" type="number" min="0" step="0.01" required></label>
+        <label>Peso unitario (g) <input name="pesoUnitarioG" type="number" min="0.001" step="0.001" placeholder="opcional"></label>
+        <label>Stock mínimo <input name="stockMinimo" type="number" min="0" step="1" value="0" required></label>
+        <label>Descripción <input name="descripcion" maxlength="255"></label>
+        <button type="submit">Guardar</button>
+        <button type="button" class="sec" id="btnCancelar">Cancelar</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="filtros" style="margin-bottom:12px">
+        <label>Buscar <input id="q" placeholder="código o nombre"></label>
+        <label>Categoría <select id="filtroCategoria"><option value="">Todas</option></select></label>
+        <label>Estado <select id="filtroActivos"><option value="false">Todos</option><option value="true">Solo activos</option></select></label>
+      </div>
+      <div class="tabla-wrap"><table>
+        <thead><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Unidad</th><th class="num">Precio</th>
+          <th class="num">Peso u. (g)</th><th class="num">Stock</th><th class="num">Mínimo</th><th>Estado</th><th class="solo-admin"></th></tr></thead>
+        <tbody id="tbProductos"></tbody>
+      </table></div>
+      <div class="paginacion">
+        <button class="sec mini" id="btnAnt">Anterior</button>
+        <span id="infoPagina" class="muted"></span>
+        <button class="sec mini" id="btnSig">Siguiente</button>
+      </div>
+    </section>
+
+    <section class="grid g2 solo-admin">
+      <div class="panel">
+        <h2>Categorías</h2>
+        <form id="formCategoria" class="fila" style="margin-bottom:10px">
+          <label>Nombre <input name="nombre" required maxlength="80"></label>
+          <label>Descripción <input name="descripcion" maxlength="255"></label>
+          <button type="submit">Agregar</button>
+        </form>
+        <div class="tabla-wrap"><table><thead><tr><th>Nombre</th><th>Descripción</th><th>Estado</th></tr></thead>
+          <tbody id="tbCategorias"></tbody></table></div>
+      </div>
+      <div class="panel">
+        <h2>Ubicaciones y límites ambientales</h2>
+        <form id="formUbicacion" class="fila" style="margin-bottom:10px">
+          <label>Nombre <input name="nombre" required maxlength="80"></label>
+          <label>T mín <input name="tempMin" type="number" step="0.1" required style="min-width:70px;width:80px"></label>
+          <label>T máx <input name="tempMax" type="number" step="0.1" required style="min-width:70px;width:80px"></label>
+          <label>H mín <input name="humMin" type="number" step="0.1" min="0" max="100" required style="min-width:70px;width:80px"></label>
+          <label>H máx <input name="humMax" type="number" step="0.1" min="0" max="100" required style="min-width:70px;width:80px"></label>
+          <button type="submit">Agregar</button>
+        </form>
+        <div class="tabla-wrap"><table><thead><tr><th>Nombre</th><th>Temperatura</th><th>Humedad</th></tr></thead>
+          <tbody id="tbUbicaciones"></tbody></table></div>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/productos.js"></script>
+</body>
+</html>

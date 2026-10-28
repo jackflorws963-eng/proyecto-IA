@@ -1,0 +1,40 @@
+# SmartStock IoT - servidor + PostgreSQL.  Autor: Brayan (BR)
+#   1) copie .env.example como .env y cambie TODAS las claves
+#   2) docker compose up -d      ->  http://localhost:8080
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD en .env}
+      # la aplicacion usa su propio usuario (no superusuario): lo crea database/docker-init.sh
+      DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD en .env}
+    volumes:
+      - datos:/var/lib/postgresql/data
+      - ./database/docker-init.sh:/docker-entrypoint-initdb.d/10-smartstock.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/smartstock
+      DB_USER: smartstock
+      DB_PASSWORD: ${DB_PASSWORD}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD en .env}
+      OPERADOR_PASSWORD: ${OPERADOR_PASSWORD:?Defina OPERADOR_PASSWORD en .env}
+      DEVICE_KEY: ${DEVICE_KEY:?Defina DEVICE_KEY en .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      TZ: America/Lima
+    ports:
+      - "${PORT:-8080}:8080"
+
+volumes:
+  datos:

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartStock IoT · Inventario</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="cabecera"><div><h1>Inventario</h1><div class="muted">Existencias y movimientos (todo cambio de stock queda registrado)</div></div></div>
+    <div id="aviso" class="aviso"></div>
+
+    <section class="panel">
+      <h2>Registrar movimiento</h2>
+      <form id="formMov" class="fila">
+        <label>Tipo
+          <select name="tipo" id="tipo" required>
+            <option value="ENTRADA">Entrada</option>
+            <option value="SALIDA">Salida</option>
+            <option value="TRANSFERENCIA">Transferencia</option>
+            <option value="AJUSTE_POSITIVO" class="solo-admin">Ajuste (+) · admin</option>
+            <option value="AJUSTE_NEGATIVO" class="solo-admin">Ajuste (−) · admin</option>
+          </select>
+        </label>
+        <label>Producto <select name="productoId" id="selProducto" required></select></label>
+        <label id="lblOrigen">Ubicación origen <select name="ubicacionOrigenId" id="selOrigen"></select></label>
+        <label id="lblDestino">Ubicación destino <select name="ubicacionDestinoId" id="selDestino"></select></label>
+        <label>Cantidad <input name="cantidad" type="number" min="1" step="1" required></label>
+        <label style="flex:1;min-width:200px">Motivo <input name="motivo" required maxlength="255" placeholder="Ej.: compra factura F001-123"></label>
+        <button type="submit">Registrar</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Existencias</h2>
+      <div class="filtros" style="margin-bottom:10px">
+        <label>Producto <select id="fProducto"><option value="">Todos</option></select></label>
+        <label>Ubicación <select id="fUbicacion"><option value="">Todas</option></select></label>
+      </div>
+      <div class="tabla-wrap"><table>
+        <thead><tr><th>Código</th><th>Producto</th><th>Ubicación</th><th class="num">Cantidad</th><th class="num">Mínimo</th><th>Actualizado</th></tr></thead>
+        <tbody id="tbInventario"></tbody>
+      </table></div>
+    </section>
+
+    <section class="panel">
+      <h2>Historial de movimientos</h2>
+      <div class="filtros" style="margin-bottom:10px">
+        <label>Producto <select id="hProducto"><option value="">Todos</option></select></label>
+        <label>Responsable <input id="hUsuario" placeholder="usuario"></label>
+        <label>Desde <input type="date" id="hDesde"></label>
+        <label>Hasta <input type="date" id="hHasta"></label>
+        <button class="sec" id="btnFiltrar">Filtrar</button>
+      </div>
+      <div class="tabla-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Origen</th><th>Destino</th><th class="num">Cant.</th><th>Motivo</th><th>Responsable</th></tr></thead>
+        <tbody id="tbMovs"></tbody>
+      </table></div>
+    </section>
+  </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/inventario.js"></script>
+</body>
+</html>

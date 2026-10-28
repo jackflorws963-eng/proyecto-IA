@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartStock IoT · Ventas</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="cabecera"><div><h1>Ventas</h1><div class="muted">Punto de venta: cada venta descuenta el stock de la ubicación elegida</div></div></div>
+    <div id="aviso" class="aviso"></div>
+
+    <section class="kpis" id="kpis"><div class="estado">Cargando resumen...</div></section>
+
+    <section class="grid pos">
+      <div class="panel">
+        <h2>Nueva venta</h2>
+        <form id="formItem" class="fila">
+          <label>Ubicación de venta <select id="selUbicacion" required></select></label>
+          <label style="flex:1;min-width:240px">Producto
+            <input id="buscar" list="listaProductos" placeholder="Código o nombre" autocomplete="off" required>
+            <datalist id="listaProductos"></datalist>
+          </label>
+          <label>Cantidad <input id="cantidad" type="number" min="1" step="1" value="1" required style="min-width:90px;width:90px"></label>
+          <button type="submit">Agregar</button>
+        </form>
+        <div class="tabla-wrap" style="margin-top:12px"><table>
+          <thead><tr><th>Código</th><th>Producto</th><th class="num">Disponible</th><th class="num">Precio</th><th class="num">Cant.</th><th class="num">Importe</th><th></th></tr></thead>
+          <tbody id="tbCarrito"></tbody>
+        </table></div>
+      </div>
+
+      <div class="panel">
+        <h2>Cobro</h2>
+        <form id="formCobro" class="columna">
+          <label>Comprobante
+            <select name="tipoComprobante" id="tipoComprobante">
+              <option value="BOLETA">Boleta</option>
+              <option value="FACTURA">Factura</option>
+              <option value="NOTA_VENTA">Nota de venta</option>
+            </select>
+          </label>
+          <label><span id="lblDocumento">DNI / RUC del cliente (opcional)</span>
+            <input name="clienteDocumento" id="clienteDocumento" inputmode="numeric" maxlength="11" pattern="\d{8}|\d{11}" title="DNI de 8 dígitos o RUC de 11">
+          </label>
+          <label><span id="lblNombre">Nombre del cliente (opcional)</span>
+            <input name="clienteNombre" id="clienteNombre" maxlength="120">
+          </label>
+          <label>Método de pago
+            <select name="metodoPago" id="metodoPago">
+              <option value="EFECTIVO">Efectivo</option>
+              <option value="TARJETA">Tarjeta</option>
+              <option value="YAPE">Yape</option>
+              <option value="PLIN">Plin</option>
+              <option value="TRANSFERENCIA">Transferencia</option>
+            </select>
+          </label>
+          <label id="lblRecibido">Monto recibido (S/)
+            <input name="montoRecibido" id="montoRecibido" type="number" min="0" step="0.01" placeholder="Igual al total">
+          </label>
+          <div class="totales">
+            <div><span>Total (IGV incluido)</span><strong id="total">S/ 0.00</strong></div>
+            <div id="filaVuelto"><span>Vuelto</span><strong id="vuelto">S/ 0.00</strong></div>
+          </div>
+          <button type="submit" id="btnCobrar" disabled>Cobrar</button>
+          <button type="button" class="sec" id="btnVaciar">Vaciar carrito</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="grid pos">
+      <div class="panel">
+        <h2>Historial de ventas</h2>
+        <div class="filtros" style="margin-bottom:10px">
+          <label>Desde <input type="date" id="fDesde"></label>
+          <label>Hasta <input type="date" id="fHasta"></label>
+          <label>Estado
+            <select id="fEstado"><option value="">Todos</option><option value="EMITIDA">Emitida</option><option value="ANULADA">Anulada</option></select>
+          </label>
+          <button class="sec" id="btnFiltrar">Filtrar</button>
+        </div>
+        <div class="tabla-wrap"><table>
+          <thead><tr><th>Número</th><th>Fecha</th><th>Cliente</th><th>Pago</th><th class="num">Total</th><th>Estado</th><th>Vendedor</th><th></th></tr></thead>
+          <tbody id="tbVentas"></tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h2>Más vendidos del mes</h2>
+        <div class="tabla-wrap"><table>
+          <thead><tr><th>Código</th><th>Producto</th><th class="num">Unidades</th><th class="num">Importe</th></tr></thead>
+          <tbody id="tbTop"></tbody>
+        </table></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Comprobante: al imprimir solo se muestra este bloque (ver @media print en app.css) -->
+<div class="modal" id="modalTicket" hidden>
+  <div class="modal-caja">
+    <div id="ticket" class="ticket"></div>
+    <div class="acciones-modal">
+      <button id="btnImprimir">Imprimir</button>
+      <button class="sec" id="btnCerrarTicket">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/ventas.js"></script>
+</body>
+</html>

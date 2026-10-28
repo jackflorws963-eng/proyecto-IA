@@ -1,0 +1,10 @@
+**/target
+dist
+.idea
+*.iml
+.git
+firmware
+tools
+instalador
+*.md
+.env

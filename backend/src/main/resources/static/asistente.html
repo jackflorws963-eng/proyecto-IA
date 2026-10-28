@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartStock IoT · Asistente IA</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body data-sin-burbuja>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="cabecera">
+      <div><h1>Asistente IA</h1><div class="muted">Inteligencia artificial local: funciona sin internet, tiene acceso a todo el programa y aprende de cada conversación.</div></div>
+      <div class="filtros">
+        <button class="sec" id="btnVoz" type="button">Voz: activada</button>
+        <button class="sec" id="btnReiniciar" type="button">Nueva conversación</button>
+      </div>
+    </div>
+    <div id="aviso" class="aviso"></div>
+
+    <section class="kpis" id="estadoIa"><div class="estado">Consultando el estado de la IA…</div></section>
+
+    <div class="grid ia-pagina">
+      <section class="panel">
+        <h2>Conversación</h2>
+        <div id="chatPagina"></div>
+      </section>
+
+      <div>
+        <section class="panel">
+          <div class="cabecera" style="margin-bottom:10px">
+            <h2 style="margin:0">Problemas actuales</h2>
+            <button id="btnReparar" type="button" class="mini">Reparar problemas</button>
+          </div>
+          <div class="muted" id="resumen">Analizando…</div>
+          <div id="problemas" style="margin-top:12px"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Predicción de agotamiento</h2>
+          <div class="muted" style="margin-bottom:8px">Aprendida de las ventas y salidas reales; se ajusta sola con cada movimiento.</div>
+          <div class="tabla-wrap"><table>
+            <thead><tr><th>Producto</th><th class="num">Stock</th><th class="num">Vende/día</th><th class="num">Alcanza</th><th class="num">Reponer</th><th>Confianza</th></tr></thead>
+            <tbody id="tbPronostico"></tbody>
+          </table></div>
+        </section>
+
+        <section class="panel">
+          <h2>Lo que aprendió</h2>
+          <form id="formRecordar" class="fila" style="margin-bottom:10px">
+            <input name="texto" maxlength="500" required placeholder="Ej.: el proveedor del arroz es Molinos del Sur" style="flex:1">
+            <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" name="preferencia" style="min-width:0"> preferencia</label>
+            <button type="submit">Enseñar</button>
+          </form>
+          <div id="memoria"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/ia.js" id="iaScript"></script>
+<script src="/js/asistente.js"></script>
+</body>
+</html>
